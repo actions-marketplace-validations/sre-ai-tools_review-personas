@@ -80,7 +80,12 @@ def local_changes(repo: Path, base_ref: str | None = None) -> tuple[list[FileCha
 
 
 def _untracked(repo: Path, path: str) -> FileChange:
-    data = (repo / path).read_bytes()
+    full = repo / path
+    # Never read through a symlink (it may point outside the repo) or into a directory
+    # (git lists a nested repository as "sub/"). These count as binary: not reviewed.
+    if path.endswith("/") or full.is_symlink() or not full.is_file():
+        return FileChange(path.rstrip("/"), "added", None)
+    data = full.read_bytes()
     if b"\0" in data[:BINARY_SNIFF_BYTES]:
         return FileChange(path, "added", None)
     try:

@@ -69,6 +69,17 @@ def test_local_changes_include_uncommitted_and_untracked(repo):
     assert staged.returncode == 0  # read-only: nothing was staged
 
 
+def test_local_untracked_symlinks_and_nested_repos_are_not_read(repo, tmp_path_factory):
+    outside = tmp_path_factory.mktemp("outside") / "secret.txt"
+    outside.write_text("TOP SECRET\n")
+    (repo / "link.txt").symlink_to(outside)
+    run(repo / "..", "init", "-q", str(repo / "nested"))
+    (repo / "nested/inner.py").write_text("y = 1\n")
+    files = by_path(local_changes(repo, "main")[0])
+    assert files["link.txt"].binary and files["nested"].binary
+    assert not any("TOP SECRET" in (f.patch or "") for f in files.values())
+
+
 def test_local_changes_without_base_branch(tmp_path):
     run(tmp_path, "init", "-q", "-b", "trunk")
     run(tmp_path, "commit", "-q", "--allow-empty", "-m", "x", "--author", "t <t@e.com>")
