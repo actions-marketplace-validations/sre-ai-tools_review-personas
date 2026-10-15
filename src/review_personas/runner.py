@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from .changes import FileChange
@@ -16,6 +16,10 @@ from .result import PersonaResult, Usage
 
 ALL_TOO_LARGE = "Every matching change is over the size limit"
 MAX_ERROR_CHARS = 200
+# Wall-clock budget for all persona reviews together. Per-call retries alone can run far past
+# the 5-minute target (CI-4) and the job timeout, which would kill the job before the comment
+# is posted; past this deadline unfinished personas are reported as timed out instead (D8).
+REVIEW_DEADLINE_S = 240
 
 
 @dataclass
@@ -104,9 +108,36 @@ def review(plan: PersonaPlan, llm: LLM) -> PersonaResult:
     return result
 
 
-def run_plans(plans: list[PersonaPlan], llm: LLM) -> list[PersonaResult]:
-    with ThreadPoolExecutor(max_workers=max(1, len(plans))) as pool:
-        return list(pool.map(lambda p: review(p, llm), plans))
+def run_plans(
+    plans: list[PersonaPlan], llm: LLM, deadline_s: float = REVIEW_DEADLINE_S
+) -> list[PersonaResult]:
+    """Review in parallel; personas still running at the deadline become ⚠️ timeouts.
+
+    Daemon threads, so a hung provider call can't keep the process alive after we return.
+    """
+    done: dict[int, PersonaResult] = {}
+
+    def work(i: int, plan: PersonaPlan) -> None:
+        done[i] = review(plan, llm)
+
+    threads = [
+        threading.Thread(target=work, args=(i, plan), daemon=True) for i, plan in enumerate(plans)
+    ]
+    for t in threads:
+        t.start()
+    end = time.monotonic() + deadline_s
+    for t in threads:
+        t.join(max(0.0, end - time.monotonic()))
+    snapshot = dict(done)  # late finishers must not change what we render
+    return [
+        snapshot.get(i)
+        or PersonaResult(
+            persona=plan.persona,
+            error=f"Timed out after {deadline_s:g}s",
+            not_reviewed=plan.not_reviewed,
+        )
+        for i, plan in enumerate(plans)
+    ]
 
 
 def pipeline_broken(plans: list[PersonaPlan], results: list[PersonaResult]) -> bool:

@@ -211,3 +211,24 @@ def test_upsert_edits_existing(monkeypatch):
     assert calls == ["https://api.github.com/repos/o/r/issues/comments/2"]
     comments.pop()
     assert gh.upsert_comment(7, MARKER + " new") == "created"
+
+
+# D8/CI-4: a hung persona can't stop the others from being reported
+def test_deadline_reports_slow_personas_as_timed_out():
+    import threading
+
+    release = threading.Event()
+
+    class SlowForApp(FakeLLM):
+        def complete(self, **kwargs):
+            if "App" in kwargs["system"]:
+                release.wait(5)  # simulates a hung Bedrock call
+            return super().complete(**kwargs)
+
+    settings = Settings(personas=(persona("DBA"), persona("App")))
+    plans, _ = plan_reviews(settings, FILES, title="t", body="")
+    results = run_plans(plans, SlowForApp({"DBA": [GOOD], "App": [GOOD]}), deadline_s=0.3)
+    release.set()
+    assert results[0].verdict.score == 6 and results[0].error is None
+    assert results[1].error == "Timed out after 0.3s"
+    assert not pipeline_broken(plans, results)
