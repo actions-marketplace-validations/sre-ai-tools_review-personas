@@ -93,3 +93,11 @@ def test_plugin_files_are_consistent():
     assert "persona-reviewer" in command
     agent = (ROOT / "agents/persona-reviewer.md").read_text()
     assert "name: persona-reviewer" in agent and "tools: Read" in agent
+
+
+def test_finish_missing_or_damaged_dir(tmp_path, capsys):
+    assert main(["finish", str(tmp_path / "nope")]) == 2
+    assert "prepare` again" in capsys.readouterr().err
+    (tmp_path / "manifest.json").write_text("{not json")
+    assert main(["finish", str(tmp_path)]) == 2
+    assert "JSONDecodeError" in capsys.readouterr().err

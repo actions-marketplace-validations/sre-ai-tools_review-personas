@@ -134,12 +134,27 @@ def cmd_metrics(args: argparse.Namespace, github=None) -> int:
     from .github import GitHub
     from .metrics import compare, report
 
+    try:
+        adopted = datetime.fromisoformat(args.adopted)
+    except ValueError:
+        print(
+            f"review-personas: --adopted must be a date like 2026-11-01, got {args.adopted!r}",
+            file=sys.stderr,
+        )
+        return EXIT_CONFIG
+    if args.weeks < 1:
+        print("review-personas: --weeks must be at least 1", file=sys.stderr)
+        return EXIT_CONFIG
     gh = github or GitHub(
         os.environ.get("GITHUB_TOKEN"),
         args.repo,
         os.environ.get("GITHUB_API_URL", "https://api.github.com"),
     )
-    before, after = compare(gh, datetime.fromisoformat(args.adopted), args.weeks)
+    try:
+        before, after = compare(gh, adopted, args.weeks)
+    except Exception as e:  # noqa: BLE001 - network/API errors: one clear line, no traceback
+        print(f"review-personas: could not read PR history for {args.repo}: {e}", file=sys.stderr)
+        return EXIT_BROKEN
     print(report(before, after), end="")
     return EXIT_OK
 
@@ -167,7 +182,16 @@ EXIT_RETRY = 3
 def cmd_finish(args: argparse.Namespace) -> int:
     from .local import finish
 
-    out = finish(Path(args.dir))
+    try:
+        out = finish(Path(args.dir))
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        # Missing or damaged working directory, e.g. already finished or never prepared.
+        print(
+            f"review-personas: cannot finish {args.dir}: {type(e).__name__}: {e}. "
+            "Run `review-personas prepare` again.",
+            file=sys.stderr,
+        )
+        return EXIT_CONFIG
     if "retry" in out:
         print(json.dumps(out, indent=2))
         return EXIT_RETRY

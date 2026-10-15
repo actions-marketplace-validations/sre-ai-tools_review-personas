@@ -48,3 +48,24 @@ def test_compare_before_after():
     text = report(before, after)
     assert "time to merge       24.0h    10.0h    -58%" in text
     assert "first human review  2.0h     2.0h     +0%" in text
+
+
+def test_metrics_cli_errors(capsys):
+    from review_personas.cli import build_parser, cmd_metrics
+
+    def run(*extra, gh=None):
+        args = build_parser().parse_args(["metrics", "--repo", "o/r", *extra])
+        return cmd_metrics(args, github=gh)
+
+    assert run("--adopted", "11/01/2026") == 2
+    assert "--adopted must be a date" in capsys.readouterr().err
+    assert run("--adopted", "2026-11-01", "--weeks", "0") == 2
+
+    class Broken:
+        repo = "o/r"
+
+        def paginate(self, path, **params):
+            raise RuntimeError("401 Unauthorized")
+
+    assert run("--adopted", "2026-11-01", gh=Broken()) == 1
+    assert "401 Unauthorized" in capsys.readouterr().err
