@@ -1,0 +1,6 @@
+{
+  "name": "review-personas",
+  "version": "0.1.0",
+  "description": "Review your branch with the review-personas panel before opening a PR, using the same personas, rules and config as CI.",
+  "repository": "https://github.com/sre-ai-tools/review-personas"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "review-personas",
+  "owner": { "name": "sre-ai-tools" },
+  "plugins": [
+    {
+      "name": "review-personas",
+      "source": "./",
+      "description": "Review your branch with the AWS architect, App developer, UI developer and DBA personas before opening a PR."
+    }
+  ]
+}

@@ -108,7 +108,49 @@ def build_parser() -> argparse.ArgumentParser:
     ci.add_argument("--title", default=None, help="PR title (default: from the event)")
     ci.add_argument("--dry-run", action="store_true", help="Print the comment; don't post")
     ci.set_defaults(func=cmd_ci)
+
+    prep = sub.add_parser("prepare", help="Local: write per-persona prompt files (JSON on stdout)")
+    prep.add_argument("--repo-root", default=".", help="The repository to review")
+    prep.add_argument("--base", default=None, help="Base branch (default: the remote's default)")
+    prep.add_argument("--config", default=None, help="Config path relative to the repo root")
+    prep.add_argument("--personas", default="", help="Comma-separated ids to run")
+    prep.set_defaults(func=cmd_prepare)
+
+    fin = sub.add_parser("finish", help="Local: validate replies and print the review")
+    fin.add_argument("dir", help="The directory printed by `prepare`")
+    fin.set_defaults(func=cmd_finish)
     return p
+
+
+def cmd_prepare(args: argparse.Namespace) -> int:
+    from .local import prepare
+
+    try:
+        out = prepare(
+            Path(args.repo_root),
+            base=args.base,
+            config=args.config,
+            personas=_split(args.personas),
+        )
+    except (ConfigError, GitError) as e:
+        print(f"review-personas: {e}", file=sys.stderr)
+        return EXIT_CONFIG
+    print(json.dumps(out, indent=2))
+    return EXIT_OK
+
+
+EXIT_RETRY = 3
+
+
+def cmd_finish(args: argparse.Namespace) -> int:
+    from .local import finish
+
+    out = finish(Path(args.dir))
+    if "retry" in out:
+        print(json.dumps(out, indent=2))
+        return EXIT_RETRY
+    print(out["review"])
+    return EXIT_OK
 
 
 def main(argv: list[str] | None = None) -> int:

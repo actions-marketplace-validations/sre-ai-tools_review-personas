@@ -332,10 +332,9 @@ action.yml                        composite action: installs the package, runs i
 src/review_personas/              Python package: the whole deterministic core (D1)
   personas/*.md                   built-in personas: the single copy [MNT-1]
 .claude-plugin/marketplace.json   makes this repo a Claude Code plugin marketplace [LOC-6]
-plugin/                           the Claude Code plugin
-  .claude-plugin/plugin.json
-  commands/review-personas.md     the /review-personas slash command
-  agents/persona-reviewer.md      one generic reviewer subagent, given a persona's prompt
+.claude-plugin/plugin.json        the repo root is the plugin (see amendment below)
+commands/review-personas.md       the /review-personas slash command
+agents/persona-reviewer.md        one generic reviewer subagent, given a persona's prompt
 docs/specs/                       intent, requirements, design
 ```
 
@@ -357,7 +356,7 @@ docs/specs/                       intent, requirements, design
 
 1. A developer installs the plugin by running `/plugin marketplace add sre-ai-tools/review-personas`, then `/plugin install review-personas`.
 2. `/review-personas [--base <branch>]` runs:
-   - `uvx --from "${CLAUDE_PLUGIN_ROOT}/.." review-personas prepare`. This uses the Python code from the plugin's own version, with no PyPI needed. It writes one prompt file per persona to a temporary directory outside the repo.
+   - `uvx --from "${CLAUDE_PLUGIN_ROOT}" review-personas prepare`. This uses the Python code from the plugin's own version, with no PyPI needed. It writes one prompt file per persona to a temporary directory outside the repo.
    - One `persona-reviewer` subagent per persona, in parallel. Each reads its prompt file and returns only the JSON reply.
    - `uvx … review-personas finish`, which validates the replies, applies the limits, scores them and prints the Markdown.
 3. The temporary directory is deleted afterwards. Nothing is written inside the repo [LOC-5].
@@ -373,6 +372,8 @@ A GitHub Actions release job, run manually with a version number:
 A breaking change to workflow inputs or the config format means `v2` [CI-6].
 
 **Rejected.** A moving major tag only: callers can't freeze a version or roll back.
+
+**Amendment (build, 2026-10-14).** The plugin is the **repo root**, not a `plugin/` subfolder. An installed plugin may contain only its own folder, and then `${CLAUDE_PLUGIN_ROOT}/..` wouldn't reach the Python package. With the root as the plugin, `uvx --from "${CLAUDE_PLUGIN_ROOT}"` always builds the matching code. Verified with `uvx --from <repo> review-personas --help`. The behaviour is unchanged.
 
 ## D12. Testing and evals
 
