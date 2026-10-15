@@ -38,7 +38,7 @@ One Python core, `src/review_personas/`, serves both CI and local runs (D1). Onl
   - `runner.run_plans` with `llm.BedrockLLM` (parallel, one retry);
   - `render.comment`;
   - `github.upsert_comment` edits the single comment that starts with `<!-- review-personas -->`.
-- **Local** (`local.py`): the `/review-personas` command (`commands/`, `agents/`) runs `review-personas prepare`, which writes the prompt files to a temp dir. One `persona-reviewer` subagent per persona writes its reply. `review-personas finish` then validates the replies with the same `reply.parse_reply`, scores them and renders the same Markdown. Exit code 3 asks for one retry round.
+- **Local** (`local.py`): the `/prpanel:review` command (plugin `prpanel`: `commands/review.md`, `agents/`) runs `review-personas prepare`, which writes the prompt files to a temp dir. One `persona-reviewer` subagent per persona writes its reply. `review-personas finish` then validates the replies with the same `reply.parse_reply`, scores them and renders the same Markdown. Exit code 3 asks for one retry round.
 - **Plugin layout:** the repo root is the Claude Code plugin (`.claude-plugin/`), so `uvx --from "${CLAUDE_PLUGIN_ROOT}"` builds this exact version.
 - **Built-in personas:** they live only in `src/review_personas/personas/*.md`, as package data. Custom personas come from the caller's `.github/review-personas/personas/`.
 

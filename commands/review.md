@@ -8,7 +8,7 @@ Run a local persona review of the current branch: everything the PR will contain
 
 Follow these steps exactly. Do not review the code yourself; the persona subagents do the reviewing and the `finish` step produces the final output.
 
-1. **Check for uv.** Run `command -v uvx`. If it prints nothing, stop and tell the user: "review-personas needs uv. Install it with `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv`), then run /review-personas again."
+1. **Check for uv.** Run `command -v uvx`. If it prints nothing, stop and tell the user: "review-personas needs uv. Install it with `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv`), then run /prpanel:review again."
 
 2. **Prepare.** Run:
 

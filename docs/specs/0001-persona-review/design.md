@@ -41,7 +41,7 @@
 ```
 
 - **CI.** The workflow runs the package end to end: prepare, call Bedrock for each persona, finish, then post the comment.
-- **Local.** The `/review-personas` slash command runs `uvx review-personas prepare`, which needs no install step. Claude Code then runs one subagent per persona, each producing a JSON reply. Finally, `uvx review-personas finish` prints the combined review in the chat.
+- **Local.** The `/prpanel:review` slash command runs `uvx review-personas prepare`, which needs no install step. Claude Code then runs one subagent per persona, each producing a JSON reply. Finally, `uvx review-personas finish` prints the combined review in the chat.
 - **Requirement on developers:** `uv` must be installed. The slash command checks for it and explains how to install it if it's missing.
 
 **Why.** Code applies the deny list [DAT-1], the limits [REV-4] and scoring [SCO-1, SCO-2] identically in both places [LOC-3, MNT-1]. If the plugin were prompt-only, Claude would apply these rules itself, and they would only be best-effort locally.
@@ -333,7 +333,7 @@ src/review_personas/              Python package: the whole deterministic core (
   personas/*.md                   built-in personas: the single copy [MNT-1]
 .claude-plugin/marketplace.json   makes this repo a Claude Code plugin marketplace [LOC-6]
 .claude-plugin/plugin.json        the repo root is the plugin (see amendment below)
-commands/review-personas.md       the /review-personas slash command
+commands/review.md                the /prpanel:review slash command
 agents/persona-reviewer.md        one generic reviewer subagent, given a persona's prompt
 docs/specs/                       intent, requirements, design
 ```
@@ -354,8 +354,8 @@ docs/specs/                       intent, requirements, design
 
 ### Local path
 
-1. A developer installs the plugin by running `/plugin marketplace add sre-ai-tools/review-personas`, then `/plugin install review-personas`.
-2. `/review-personas [--base <branch>]` runs:
+1. A developer installs the plugin by running `/plugin marketplace add sre-ai-tools/review-personas`, then `/plugin install prpanel@review-personas`.
+2. `/prpanel:review [--base <branch>]` runs:
    - `uvx --from "${CLAUDE_PLUGIN_ROOT}" review-personas prepare`. This uses the Python code from the plugin's own version, with no PyPI needed. It writes one prompt file per persona to a temporary directory outside the repo.
    - One `persona-reviewer` subagent per persona, in parallel. Each reads its prompt file and returns only the JSON reply.
    - `uvx … review-personas finish`, which validates the replies, applies the limits, scores them and prints the Markdown.
@@ -374,6 +374,8 @@ A breaking change to workflow inputs or the config format means `v2` [CI-6].
 **Rejected.** A moving major tag only: callers can't freeze a version or roll back.
 
 **Amendment (build, 2026-10-14).** The plugin is the **repo root**, not a `plugin/` subfolder. An installed plugin may contain only its own folder, and then `${CLAUDE_PLUGIN_ROOT}/..` wouldn't reach the Python package. With the root as the plugin, `uvx --from "${CLAUDE_PLUGIN_ROOT}"` always builds the matching code. Verified with `uvx --from <repo> review-personas --help`. The behaviour is unchanged.
+
+**Amendment (owner, 2026-10-15).** The plugin is named `prpanel` and its command `review`, so developers run `/prpanel:review`. Claude Code always shows plugin commands as `/<plugin>:<command>`, and the old names displayed as `/review-personas:review-personas`. The marketplace, repo, Python package, CLI, config file and workflows keep the name `review-personas`, so CI callers are unaffected. The install ID is `prpanel@review-personas`.
 
 ## D12. Testing and evals
 

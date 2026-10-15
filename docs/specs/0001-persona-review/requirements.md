@@ -53,7 +53,8 @@
 
 ## Local runs (Claude Code)
 
-- **LOC-1 Must.** A developer runs `/review-personas` in Claude Code to review their branch before opening a PR. `[I: Local: entry point, purpose]`
+- **LOC-1 Must.** A developer runs `/prpanel:review` in Claude Code to review their branch before opening a PR. `[I: Local: entry point, purpose]`
+  _Amended 2026-10-15 by the owner: the command is `/prpanel:review` (plugin `prpanel`, command `review`). It was `/review-personas`, which Claude Code shows as `/review-personas:review-personas`._
 - **LOC-2 Must.** By default it reviews the current branch compared with its base branch, including uncommitted changes. `[I: Local: scope]`
 - **LOC-3 Must.** It uses the same persona definitions, review rules (REV-\*), scoring (SCO-1, SCO-2) and deny list (DAT-\*) as CI, and the same repo config file. `[I: Local: consistency]`
 - **LOC-4 Must.** It uses the developer's own Claude Code session and model, and needs no AWS access. `[I: Req 8]`

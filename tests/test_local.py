@@ -86,9 +86,9 @@ def test_cli_prepare_config_error(repo, capsys):
 def test_plugin_files_are_consistent():
     marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
     plugin = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
-    assert marketplace["plugins"][0]["name"] == plugin["name"] == "review-personas"
+    assert marketplace["plugins"][0]["name"] == plugin["name"] == "prpanel"
     assert marketplace["plugins"][0]["source"] == "./"  # the repo root is the plugin
-    command = (ROOT / "commands/review-personas.md").read_text()
+    command = (ROOT / "commands/review.md").read_text()
     assert 'uvx --from "${CLAUDE_PLUGIN_ROOT}" review-personas prepare' in command
     assert "persona-reviewer" in command
     agent = (ROOT / "agents/persona-reviewer.md").read_text()

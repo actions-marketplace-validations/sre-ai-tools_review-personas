@@ -3,7 +3,7 @@
 A panel of AI reviewers for GitHub pull requests: **AWS architect**, **App developer**, **UI developer** and **DBA**, plus any personas you add. Each persona reviews the PR from its own angle and either scores it from 0 to 10 with up to 3 short findings, or says it is **not relevant**. The results appear in one PR comment with an advisory cumulative score, so human reviewers start from a specialist pre-review.
 
 - **CI:** runs on AWS Bedrock and posts the comment on every push, editing it in place.
-- **Locally:** `/review-personas` in Claude Code reviews your branch before you open the PR, with the same personas, rules and config.
+- **Locally:** `/prpanel:review` in Claude Code reviews your branch before you open the PR, with the same personas, rules and config.
 - **Advisory:** the score never blocks a merge.
 
 ```markdown
@@ -87,15 +87,15 @@ You need [uv](https://docs.astral.sh/uv/) installed (`brew install uv`). Then, i
 
 ```
 /plugin marketplace add sre-ai-tools/review-personas
-/plugin install review-personas@review-personas
+/plugin install prpanel@review-personas
 ```
 
 Then, on your feature branch:
 
 ```
-/review-personas                      # branch vs the remote's default branch, incl. uncommitted work
-/review-personas --base develop
-/review-personas --personas dba,app-developer
+/prpanel:review                       # branch vs the remote's default branch, incl. uncommitted work
+/prpanel:review --base develop
+/prpanel:review --personas dba,app-developer
 ```
 
 - **Model and config:** it uses your Claude Code model and the repo's `.github/review-personas.yml`. Model settings in the config are ignored locally.

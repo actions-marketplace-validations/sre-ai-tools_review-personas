@@ -1,6 +1,6 @@
 ---
 name: persona-reviewer
-description: Reviews a change set as one review-personas persona, from a prompt file prepared by /review-personas. Only for use by the /review-personas command.
+description: Reviews a change set as one review-personas persona, from a prompt file prepared by /prpanel:review. Only for use by the /prpanel:review command.
 tools: Read
 ---
 
