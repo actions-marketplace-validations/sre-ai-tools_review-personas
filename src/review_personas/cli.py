@@ -119,7 +119,29 @@ def build_parser() -> argparse.ArgumentParser:
     fin = sub.add_parser("finish", help="Local: validate replies and print the review")
     fin.add_argument("dir", help="The directory printed by `prepare`")
     fin.set_defaults(func=cmd_finish)
+
+    met = sub.add_parser("metrics", help="Pilot: median review speed before vs after adoption")
+    met.add_argument("--repo", required=True, help="owner/name")
+    met.add_argument("--adopted", required=True, help="Adoption date, YYYY-MM-DD")
+    met.add_argument("--weeks", type=int, default=4, help="Weeks before and after (default 4)")
+    met.set_defaults(func=cmd_metrics)
     return p
+
+
+def cmd_metrics(args: argparse.Namespace, github=None) -> int:
+    from datetime import datetime
+
+    from .github import GitHub
+    from .metrics import compare, report
+
+    gh = github or GitHub(
+        os.environ.get("GITHUB_TOKEN"),
+        args.repo,
+        os.environ.get("GITHUB_API_URL", "https://api.github.com"),
+    )
+    before, after = compare(gh, datetime.fromisoformat(args.adopted), args.weeks)
+    print(report(before, after), end="")
+    return EXIT_OK
 
 
 def cmd_prepare(args: argparse.Namespace) -> int:
