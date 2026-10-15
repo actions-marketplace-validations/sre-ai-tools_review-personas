@@ -1,6 +1,9 @@
 {
   "name": "review-personas",
-  "owner": { "name": "sre-ai-tools" },
+  "owner": {
+    "name": "sre-ai-tools"
+  },
+  "description": "Persona-based PR review (AWS architect, App developer, UI developer, DBA) for Claude Code.",
   "plugins": [
     {
       "name": "review-personas",
