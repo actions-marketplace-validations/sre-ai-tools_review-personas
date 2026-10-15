@@ -11,4 +11,4 @@ Code is written only after `design.md` is approved. A later change, such as a me
 | # | Change | Status |
 |---|---|---|
 | [0001](0001-persona-review/) | Persona PR review pipeline and local Claude Code runs | Built on `feat/0001-persona-review`; awaiting Bedrock and end-to-end verification |
-| [0002](0002-test-applications/) | Test applications for end-to-end verification of 0001 | Testbed built locally (`review-personas-testbed`); awaiting GitHub repo, IAM role and first verification run |
+| [0002](0002-test-applications/) | Test applications for end-to-end verification of 0001 | Testbed live at [sre-ai-tools/review-personas-testbed](https://github.com/sre-ai-tools/review-personas-testbed) with its IAM role; awaiting the first verification run |
