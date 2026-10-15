@@ -1,0 +1,120 @@
+"""Command line: `review-personas ci | prepare | finish | metrics`. Exit codes follow design D10."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+from .changes import GitError, ci_changes
+from .config import ConfigError, load_settings
+from .render import comment, job_summary
+
+EXIT_OK, EXIT_BROKEN, EXIT_CONFIG = 0, 1, 2
+
+
+def _split(value: str) -> list[str] | None:
+    return [s.strip() for s in value.split(",") if s.strip()] or None
+
+
+def _event() -> dict:
+    path = os.environ.get("GITHUB_EVENT_PATH")
+    if not path or not Path(path).is_file():
+        return {}
+    return json.loads(Path(path).read_text(encoding="utf-8")).get("pull_request") or {}
+
+
+def cmd_ci(args: argparse.Namespace, llm=None, github=None) -> int:
+    from .github import GitHub
+    from .llm import BedrockLLM
+    from .runner import pipeline_broken, plan_reviews, run_plans
+
+    root = Path(args.repo_root)
+    try:
+        settings = load_settings(
+            root,
+            args.config,
+            model_override=args.model or None,
+            personas_override=_split(args.personas),
+        )
+    except ConfigError as e:
+        print(f"::error::review-personas config error: {e}", file=sys.stderr)
+        return EXIT_CONFIG
+
+    pr = _event()
+    number = args.pr or pr.get("number")
+    base = args.base_ref or (f"origin/{pr['base']['ref']}" if pr.get("base") else None)
+    head = args.head or (pr.get("head") or {}).get("sha") or "HEAD"
+    if not base or (not number and not args.dry_run):
+        print("::error::Need a pull_request event or --base-ref and --pr", file=sys.stderr)
+        return EXIT_CONFIG
+    try:
+        files = ci_changes(root, base, head)
+    except GitError as e:
+        print(f"::error::{e}", file=sys.stderr)
+        return EXIT_BROKEN
+
+    plans, skipped = plan_reviews(
+        settings, files, title=args.title or pr.get("title") or "", body=pr.get("body") or ""
+    )
+    results = run_plans(plans, llm or BedrockLLM(args.region))
+    body = comment(
+        results, not_reviewed=skipped, prices=settings.prices, reviewed=f"commit {head[:7]}"
+    )
+
+    if summary := os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(summary, "a", encoding="utf-8") as fh:
+            fh.write(job_summary(results, settings.prices))
+    for r in results:
+        if r.error:
+            print(f"::warning::{r.persona.id}: {r.error}", file=sys.stderr)
+
+    if args.dry_run:
+        print(body)
+    else:
+        try:
+            gh = github or GitHub(
+                os.environ.get("GITHUB_TOKEN"),
+                args.repo or os.environ["GITHUB_REPOSITORY"],
+                os.environ.get("GITHUB_API_URL", "https://api.github.com"),
+            )
+            print(f"Review comment {gh.upsert_comment(int(number), body)}.")
+        except Exception as e:  # noqa: BLE001 - D10: comment not postable fails the check
+            print(f"::error::Could not post the review comment: {e}", file=sys.stderr)
+            return EXIT_BROKEN
+
+    if pipeline_broken(plans, results):
+        print("::error::Every persona review failed; see warnings above.", file=sys.stderr)
+        return EXIT_BROKEN
+    return EXIT_OK  # a low score never fails the check (SCO-3)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="review-personas", description=__doc__)
+    sub = p.add_subparsers(dest="command", required=True)
+
+    ci = sub.add_parser("ci", help="Review a pull request with AWS Bedrock and post the comment")
+    ci.add_argument("--repo-root", default=".", help="Checkout of the caller repo")
+    ci.add_argument("--config", default=None, help="Config path relative to the repo root")
+    ci.add_argument("--personas", default="", help="Comma-separated ids to run (overrides config)")
+    ci.add_argument("--model", default="", help="Model ID for every persona (overrides config)")
+    ci.add_argument("--region", default=None, help="AWS region (default: AWS_REGION)")
+    ci.add_argument("--repo", default=None, help="owner/name (default: GITHUB_REPOSITORY)")
+    ci.add_argument("--pr", type=int, default=None, help="PR number (default: from the event)")
+    ci.add_argument("--base-ref", default=None, help="Base ref (default: origin/<PR base>)")
+    ci.add_argument("--head", default=None, help="Head commit (default: PR head SHA, else HEAD)")
+    ci.add_argument("--title", default=None, help="PR title (default: from the event)")
+    ci.add_argument("--dry-run", action="store_true", help="Print the comment; don't post")
+    ci.set_defaults(func=cmd_ci)
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
