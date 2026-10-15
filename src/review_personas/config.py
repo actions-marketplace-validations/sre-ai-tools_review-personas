@@ -157,7 +157,11 @@ def load_settings(
     default_model = raw.get("model") or DEFAULT_MODEL
     if not isinstance(default_model, str):
         raise ConfigError("`model` must be a string")
-    default_params = _mapping(raw.get("model_params"), "model_params")
+    # Keyed by model ID: params are model-specific, so they follow the model (D6 amendment).
+    params_by_model = {
+        model_id: _mapping(params, f"model_params.{model_id}")
+        for model_id, params in _mapping(raw.get("model_params"), "model_params").items()
+    }
     entries = _mapping(raw.get("personas"), "personas")
     unknown_ids = set(entries) - set(defs)
     if unknown_ids:
@@ -195,7 +199,7 @@ def load_settings(
                 model=model,
                 paths=paths,
                 model_params={
-                    **default_params,
+                    **params_by_model.get(model, {}),
                     **_mapping(entry.get("model_params"), f"personas.{pid}.model_params"),
                 },
             )

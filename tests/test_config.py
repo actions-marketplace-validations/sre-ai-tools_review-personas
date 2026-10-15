@@ -42,7 +42,9 @@ def test_overrides_and_custom(tmp_path):
             tmp_path,
             """
 model: m-default
-model_params: {a: 1}
+model_params:
+  m-dba: {a: 1}
+  m-default: {c: 3}
 personas:
   aws-architect: {enabled: false}
   dba: {model: m-dba, extra_focus: "Postgres 16 only.", model_params: {b: 2}}
@@ -55,7 +57,10 @@ personas:
     assert sorted(by) == ["app-developer", "dba", "security", "ui-developer"]
     assert by["app-developer"].model == "m-default"
     assert by["dba"].model == "m-dba" and by["dba"].focus.endswith("Postgres 16 only.")
+    # D6 amendment: params follow the model each persona actually uses
     assert by["dba"].model_params == {"a": 1, "b": 2}
+    assert by["app-developer"].model_params == {"c": 3}
+    assert by["security"].model_params == {}  # m-sec has no entry
     assert by["ui-developer"].paths == ("web/*",)
     assert by["security"].model == "m-sec" and by["security"].icon == "🔐"
 
@@ -79,6 +84,7 @@ def test_precedence_override_beats_everything(tmp_path):
         ("personas:\n  dba: {enabled: 'no'}\n", "must be true or false"),
         ("personas:\n  dba: {paths: '*.sql'}\n", "list of non-empty strings"),
         ("max_diff_chars: -1\n", "positive integer"),
+        ("model_params: {effort: low}\n", "model_params.effort: must be a mapping"),
         ("prices:\n  m: {input_per_mtok: 1}\n", "prices.m"),
         ("personas: [dba]\n", "must be a mapping"),
         ("model: [\n", "invalid YAML"),
@@ -132,3 +138,11 @@ prices:
     assert s.sensitive[: len(SENSITIVE)] == SENSITIVE and s.sensitive[-1] == "config/prod/*"
     assert "go.sum" not in s.generated and "*.pb.go" in s.generated
     assert s.prices["m"].output_per_mtok == 20.0
+
+
+def test_model_params_follow_workflow_model_override(tmp_path):
+    s = load_settings(
+        repo(tmp_path, "model_params:\n  m-cli: {x: 1}\n  m-other: {y: 2}\n"),
+        model_override="m-cli",
+    )
+    assert {p.id: p.model_params for p in s.personas}["dba"] == {"x": 1}

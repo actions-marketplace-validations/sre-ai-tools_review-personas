@@ -18,7 +18,8 @@ exclude_generated:
 # include_generated: ["go.sum"]
 
 # Passed to Bedrock as additionalModelRequestFields (model-specific).
-# model_params: {}
+# model_params:
+#   global.anthropic.claude-opus-5-5: {output_config: {effort: low}}
 
 # Optional, enables the cost estimate. USD per million tokens, per model ID.
 # prices:

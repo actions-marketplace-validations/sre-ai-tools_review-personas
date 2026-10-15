@@ -198,7 +198,8 @@ max_diff_chars: 100000                 # D4
 exclude_sensitive: ["config/prod/*"]   # added to the built-in deny list; can't remove entries [DAT-3]
 exclude_generated: ["*.pb.go"]         # added to the generated list (D4)
 include_generated: ["*.lock"]          # removes entries from the generated list (D4)
-model_params: {}                       # passed to Bedrock as-is (D8)
+model_params:                          # per model ID; passed to Bedrock as-is (D8)
+  <bedrock-model-id>: {}
 prices:                                # optional; enables the cost estimate (D9)
   <bedrock-model-id>: {input_per_mtok: 4.00, output_per_mtok: 20.00}
 personas:
@@ -212,6 +213,8 @@ personas:
 ```
 
 Allowed per-persona keys: `enabled`, `model`, `model_params`, `extra_focus`, `paths`.
+
+**Amendment (owner, 2026-10-15): top-level `model_params` are keyed by model ID**, like `prices`. A persona gets the entry for the model it actually uses, after every override including the workflow's `model` input. Its own `personas.<id>.model_params` are merged on top. Before this change, top-level params went to every persona. Because they are model-specific, a setting meant for Claude could reach a persona on another model family, and Bedrock would reject that persona's call. Found by the persona review of this branch (App developer).
 
 ### Precedence (highest first)
 
