@@ -39,3 +39,25 @@ def test_caller_example_uses_pull_request_not_target():
     wf = load("examples/caller-workflow.yml")
     assert "pull_request" in wf[True] and "pull_request_target" not in wf[True]
     assert wf["concurrency"]["cancel-in-progress"] is True
+
+
+def test_examples_are_valid_config(tmp_path):
+    from review_personas.config import load_settings
+
+    (tmp_path / ".github/review-personas/personas").mkdir(parents=True)
+    (tmp_path / ".github/review-personas.yml").write_text(
+        (ROOT / "examples/review-personas.yml").read_text()
+    )
+    (tmp_path / ".github/review-personas/personas/security.md").write_text(
+        (ROOT / "examples/security.md").read_text()
+    )
+    ids = [p.id for p in load_settings(tmp_path).personas]
+    assert ids == ["app-developer", "aws-architect", "dba", "ui-developer", "security"]
+
+
+def test_release_rewrites_review_workflow_ref():
+    release = (ROOT / ".github/workflows/release.yml").read_text()
+    assert "uses: sre-ai-tools/review-personas)@" in release
+    assert (ROOT / ".github/workflows/review.yml").read_text().count(
+        "uses: sre-ai-tools/review-personas@"
+    ) == 1

@@ -10,4 +10,4 @@ Code is written only after `design.md` is approved. A later change, such as a me
 
 | # | Change | Status |
 |---|---|---|
-| [0001](0001-persona-review/) | Persona PR review pipeline and local Claude Code runs | Intent, requirements and design approved; build planning |
+| [0001](0001-persona-review/) | Persona PR review pipeline and local Claude Code runs | Built on `feat/0001-persona-review`; awaiting Bedrock and end-to-end verification |

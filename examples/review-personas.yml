@@ -1,0 +1,35 @@
+# Copy to .github/review-personas.yml in your repo. The file and every key are optional.
+
+# Default Bedrock model ID (or inference profile ID) for every persona.
+# Built-in default: global.anthropic.claude-opus-5-5
+# model: global.anthropic.claude-opus-5-5
+
+# Diff characters each persona sees. Whole files past the limit are listed as not reviewed.
+# max_diff_chars: 100000
+
+# Never sent to any model. Added to the built-in deny list (.env, keys, certificates, tfstate...).
+exclude_sensitive:
+  - "config/prod/*"
+
+# Skipped as generated noise (added to lockfiles, minified files, source maps)...
+exclude_generated:
+  - "*.pb.go"
+# ...or put back into review.
+# include_generated: ["go.sum"]
+
+# Passed to Bedrock as additionalModelRequestFields (model-specific).
+# model_params: {}
+
+# Optional, enables the cost estimate. USD per million tokens, per model ID.
+# prices:
+#   global.anthropic.claude-opus-5-5: {input_per_mtok: 0.00, output_per_mtok: 0.00}
+
+# Every built-in persona, and every file in .github/review-personas/personas/, runs unless disabled.
+personas:
+  dba:
+    extra_focus: "We use PostgreSQL 16. Flag anything that takes an ACCESS EXCLUSIVE lock."
+  ui-developer:
+    paths: ["web/*"]   # only these files; no model call when none changed
+  # aws-architect:
+  #   enabled: false
+  #   model: global.anthropic.claude-sonnet-5-5

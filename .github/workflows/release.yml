@@ -1,0 +1,55 @@
+name: Release
+
+# Exact tag vX.Y.Z plus a moving major tag vX (D11). Run from main.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, e.g. 1.2.3
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  evals:
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/evals.yml
+
+  release:
+    needs: [test, evals]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Pin versions and tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version must be X.Y.Z"; exit 1; }
+          MAJOR="v${VERSION%%.*}"
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::v$VERSION already exists"; exit 1
+          fi
+          # The reusable workflow must run the action from the same release (D11).
+          sed -i -E "s#(uses: sre-ai-tools/review-personas)@[^[:space:]]+#\1@v$VERSION#" .github/workflows/review.yml
+          sed -i -E "s#^version = \".*\"#version = \"$VERSION\"#" pyproject.toml
+          sed -i -E "s#\"version\": \".*\"#\"version\": \"$VERSION\"#" .claude-plugin/plugin.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release v$VERSION"
+          git tag "v$VERSION"
+          git tag -f "$MAJOR"
+          git push origin HEAD:main "v$VERSION"
+          git push -f origin "$MAJOR"
