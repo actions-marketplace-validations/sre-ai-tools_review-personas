@@ -21,13 +21,16 @@ jobs:
   evals:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # PR code runs here with AWS credentials, so the `evals` environment requires the owner's
+    # approval first, and the eval role trusts only this environment (D12 amendment).
+    environment: evals
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install .
-      # Owner setup: repository variables EVALS_AWS_ROLE_ARN and EVALS_AWS_REGION.
+      # Owner setup (README, "Evals setup"): variables EVALS_AWS_ROLE_ARN and EVALS_AWS_REGION.
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.EVALS_AWS_ROLE_ARN }}

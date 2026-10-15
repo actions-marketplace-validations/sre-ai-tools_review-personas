@@ -430,6 +430,14 @@ Results go to the job summary.
 
 **Setup the owner must provide:** an AWS role for **this** repo's own workflows (OIDC), with Bedrock access to the default model.
 
+**Amendment (owner, 2026-10-15): evals are gated by an approval environment.** A PR that triggers evals runs code from that PR, including `evals/run.py`. Without a gate, any branch could use the eval role's AWS credentials. So:
+
+- The eval job runs in the GitHub Environment `evals`, which has the owner as a required reviewer. On a PR, the job **waits until the owner approves** after reading the change, and only then receives credentials. The same gate applies when releases call the evals.
+- The eval role's trust policy accepts only that environment (`sub`: `repo:sre-ai-tools/review-personas:environment:evals`), and its permissions allow only `bedrock:InvokeModel` on the eval models.
+- Fork PRs get no OIDC token, so they never run evals.
+
+Found by the persona review of this branch (AWS architect).
+
 _Pass bars are proposed; owner to confirm._
 
 ## D13. Pilot measurement

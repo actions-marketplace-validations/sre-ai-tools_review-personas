@@ -61,3 +61,8 @@ def test_release_rewrites_review_workflow_ref():
     assert (ROOT / ".github/workflows/review.yml").read_text().count(
         "uses: sre-ai-tools/review-personas@"
     ) == 1
+
+
+def test_evals_job_is_gated_by_environment():
+    # PR code gets AWS credentials here; the environment's required reviewer gates it (D12).
+    assert load(".github/workflows/evals.yml")["jobs"]["evals"]["environment"] == "evals"

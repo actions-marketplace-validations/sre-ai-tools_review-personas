@@ -40,6 +40,8 @@ Create an IAM role with a trust policy for GitHub's OIDC provider (`token.action
 }
 ```
 
+Use a **dedicated role** for this workflow, with no permissions beyond the one below. Consider a CloudWatch alarm on Bedrock invocations or spend.
+
 Give it permission to call the model. The default is the `global.anthropic.claude-opus-5-5` inference profile, which needs both the profile and the underlying model:
 
 ```json
@@ -127,4 +129,10 @@ Run the **Release** workflow with a version such as `1.2.3`. It runs the tests a
 
 Breaking changes to workflow inputs or the config format need a new major version.
 
-The evals need repository variables `EVALS_AWS_ROLE_ARN` (and optionally `EVALS_AWS_REGION`), pointing at a role trusted for this repo with Bedrock access.
+### Evals setup
+
+The evals run code from the PR, with AWS credentials, so they are gated:
+
+1. **Create the environment.** In this repo's settings, create an Environment named `evals`. Add yourself as a **required reviewer**, and set the variables `EVALS_AWS_ROLE_ARN` and, optionally, `EVALS_AWS_REGION`.
+2. **Create the role.** Make an IAM role whose trust policy accepts only that environment: `"token.actions.githubusercontent.com:sub": "repo:sre-ai-tools/review-personas:environment:evals"`. Its only permission is `bedrock:InvokeModel` on the eval models (see the policy above).
+3. **Approve each run.** A PR that changes personas, the prompt or evals waits for your approval before the evals run. Read the diff before you approve, especially changes to `evals/`.
