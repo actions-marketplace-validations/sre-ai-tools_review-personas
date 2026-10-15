@@ -1,0 +1,39 @@
+name: Review personas
+description: Persona-based AI review of a pull request with AWS Bedrock. Run via the reusable workflow, which checks out the PR and configures AWS credentials first.
+inputs:
+  github-token:
+    description: Token used to post the review comment
+    default: ${{ github.token }}
+  config-path:
+    description: Config file path in the caller repo (optional; defaults apply when missing)
+    default: .github/review-personas.yml
+  personas:
+    description: Comma-separated persona ids to run, overriding the config
+    default: ""
+  model:
+    description: Bedrock model ID for every persona, overriding the config
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install review-personas
+      shell: bash
+      run: pip install --quiet "$ACTION_PATH"
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+    - name: Review
+      shell: bash
+      # Inputs go through env, never into the script text, so they can't inject shell.
+      run: |
+        review-personas ci \
+          --config "$CONFIG_PATH" \
+          --personas "$PERSONAS" \
+          --model "$MODEL"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_PATH: ${{ inputs.config-path }}
+        PERSONAS: ${{ inputs.personas }}
+        MODEL: ${{ inputs.model }}
