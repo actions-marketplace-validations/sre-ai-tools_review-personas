@@ -1,0 +1,4 @@
+# These values must never appear in any prompt sent to a model (DAT-1).
+secrets: [sk_live_CANARY_7f3a9c, CANARY_hunter2]
+not_reviewed: {".env": sensitive}
+app-developer: {relevant: true}

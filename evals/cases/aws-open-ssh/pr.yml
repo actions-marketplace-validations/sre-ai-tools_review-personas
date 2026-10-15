@@ -1,0 +1,2 @@
+title: Add bastion host security group
+body: Lets the team SSH into the private subnet.

@@ -1,0 +1,10 @@
+diff --git a/db/views/active_customers.sql b/db/views/active_customers.sql
+new file mode 100644
+--- /dev/null
++++ b/db/views/active_customers.sql
+@@ -0,0 +1,5 @@
++CREATE OR REPLACE VIEW active_customers AS
++SELECT c.id, c.email, count(o.id) AS orders
++FROM customers c JOIN orders o ON o.customer_id = c.id
++WHERE o.created_at > now() - interval '90 days'
++GROUP BY c.id, c.email;

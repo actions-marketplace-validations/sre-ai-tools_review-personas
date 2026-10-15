@@ -1,0 +1,5 @@
+aws-architect:
+  relevant: true
+  must_catch: SSH (port 22) is open to the whole internet (0.0.0.0/0); it should be restricted.
+ui-developer: {relevant: false}
+dba: {relevant: false}

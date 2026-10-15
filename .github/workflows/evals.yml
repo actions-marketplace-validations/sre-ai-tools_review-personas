@@ -1,0 +1,35 @@
+name: Evals
+
+# Review-quality evals (D12). They call Bedrock, so they run only when review behaviour can
+# change, and from the release workflow.
+on:
+  pull_request:
+    paths:
+      - src/review_personas/personas/**
+      - src/review_personas/prompt.py
+      - src/review_personas/reply.py
+      - src/review_personas/config.py # holds the default model
+      - evals/**
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      # Owner setup: repository variables EVALS_AWS_ROLE_ARN and EVALS_AWS_REGION.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.EVALS_AWS_ROLE_ARN }}
+          aws-region: ${{ vars.EVALS_AWS_REGION || 'us-east-1' }}
+      - run: python evals/run.py

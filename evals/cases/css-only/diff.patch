@@ -1,0 +1,10 @@
+diff --git a/web/src/styles/buttons.css b/web/src/styles/buttons.css
+--- a/web/src/styles/buttons.css
++++ b/web/src/styles/buttons.css
+@@ -1,5 +1,5 @@
+ .btn-primary {
+-  background: #0b5fff;
++  background: #3d7bff;
+   color: #fff;
+   border-radius: 4px;
+ }

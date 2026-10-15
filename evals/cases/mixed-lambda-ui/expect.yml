@@ -1,0 +1,8 @@
+aws-architect:
+  relevant: true
+  must_catch: The export is written to S3 with a public-read ACL, exposing customer data.
+dba:
+  relevant: true
+  must_catch: A full DynamoDB table scan is used instead of a query by customer_id.
+ui-developer: {relevant: true}
+app-developer: {relevant: true}
