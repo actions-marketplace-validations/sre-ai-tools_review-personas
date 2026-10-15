@@ -82,7 +82,9 @@ def test_local_untracked_symlinks_and_nested_repos_are_not_read(repo, tmp_path_f
 
 def test_local_changes_without_base_branch(tmp_path):
     run(tmp_path, "init", "-q", "-b", "trunk")
-    run(tmp_path, "commit", "-q", "--allow-empty", "-m", "x", "--author", "t <t@e.com>")
+    run(tmp_path, "config", "user.email", "t@example.com")  # CI runners have no global identity
+    run(tmp_path, "config", "user.name", "t")
+    run(tmp_path, "commit", "-q", "--allow-empty", "-m", "x")
     with pytest.raises(GitError, match="base branch"):
         local_changes(tmp_path)
 
