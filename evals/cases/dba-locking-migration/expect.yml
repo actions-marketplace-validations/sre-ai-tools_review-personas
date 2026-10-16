@@ -1,0 +1,5 @@
+dba:
+  relevant: true
+  must_catch: Creating the index without CONCURRENTLY (or adding a NOT NULL column without a default) locks the large orders table.
+ui-developer: {relevant: false}
+aws-architect: {relevant: false}

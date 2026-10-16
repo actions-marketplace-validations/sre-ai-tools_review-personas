@@ -1,0 +1,5 @@
+ui-developer:
+  relevant: true
+  must_catch: Accessibility - the image has no alt text, or the clickable div is not keyboard accessible (should be a button).
+dba: {relevant: false}
+aws-architect: {relevant: false}

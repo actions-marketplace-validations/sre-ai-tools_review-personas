@@ -1,0 +1,12 @@
+diff --git a/infra/s3.tf b/infra/s3.tf
+--- a/infra/s3.tf
++++ b/infra/s3.tf
+@@ -1,3 +1,8 @@
+ resource "aws_s3_bucket" "reports" {
+   bucket = "acme-reports"
++
++  tags = {
++    team        = "payments"
++    cost-center = "cc-1234"
++  }
+ }

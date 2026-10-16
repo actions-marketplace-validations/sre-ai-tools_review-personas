@@ -1,0 +1,9 @@
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,4 @@
+ # Orders service
+ 
+-Handles order creation and hsitory.
++Handles order creation and history.
+ See docs/ for details.

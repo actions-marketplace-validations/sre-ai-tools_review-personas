@@ -1,0 +1,29 @@
+# Copy to .github/workflows/review-personas.yml in a repo that wants persona reviews.
+name: Review personas
+
+on:
+  # pull_request, never pull_request_target: PR content is untrusted (REV-5).
+  # PRs from forks get no OIDC token, so they are not reviewed.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  # One review per PR at a time; a new push cancels the older run (D7).
+  group: review-personas-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    uses: sre-ai-tools/review-personas/.github/workflows/review.yml@v1
+    with:
+      aws-role-arn: arn:aws:iam::123456789012:role/github-review-personas
+      aws-region: us-east-1
+      # Optional: run only these personas (comma-separated ids also work).
+      # personas: '["aws-architect", "dba"]'
+      # Optional: one Bedrock model ID for every persona.
+      # model: global.anthropic.claude-opus-5-5

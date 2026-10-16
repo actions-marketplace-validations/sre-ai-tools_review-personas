@@ -1,0 +1,8 @@
+diff --git a/db/migrations/0042_orders_user_index.sql b/db/migrations/0042_orders_user_index.sql
+new file mode 100644
+--- /dev/null
++++ b/db/migrations/0042_orders_user_index.sql
+@@ -0,0 +1,4 @@
++-- orders has ~400M rows in production
++CREATE INDEX idx_orders_user_id ON orders (user_id);
++ALTER TABLE orders ADD COLUMN region text NOT NULL;

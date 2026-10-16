@@ -1,0 +1,6 @@
+app-developer:
+  relevant: true
+  must_catch: A missing user is not handled - USERS.get can return None, so user["name"] raises.
+ui-developer: {relevant: false}
+dba: {relevant: false}
+aws-architect: {relevant: false}

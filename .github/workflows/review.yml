@@ -1,0 +1,52 @@
+name: Review personas
+
+# Reusable workflow for caller repos (CI-1). See README.md for the caller template.
+on:
+  workflow_call:
+    inputs:
+      aws-role-arn:
+        description: IAM role to assume via GitHub OIDC, with bedrock:InvokeModel on the models used
+        required: true
+        type: string
+      aws-region:
+        description: AWS region for Bedrock calls
+        type: string
+        default: us-east-1
+      config-path:
+        description: Config file path in the caller repo
+        type: string
+        default: .github/review-personas.yml
+      personas:
+        description: 'Persona ids to run, overriding the config: a JSON array like ["aws-architect", "dba"], or comma-separated'
+        type: string
+        default: ""
+      model:
+        description: Bedrock model ID for every persona, overriding the config
+        type: string
+        default: ""
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      # The PR head with full history, so `git merge-base` finds the base (D4).
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+      # The release job rewrites this ref to the exact release tag (D11).
+      - uses: sre-ai-tools/review-personas@main
+        with:
+          config-path: ${{ inputs.config-path }}
+          personas: ${{ inputs.personas }}
+          model: ${{ inputs.model }}

@@ -1,0 +1,15 @@
+diff --git a/web/src/ProductCard.tsx b/web/src/ProductCard.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/src/ProductCard.tsx
+@@ -0,0 +1,14 @@
++type Props = { name: string; imageUrl: string; onSelect: () => void };
++
++export function ProductCard({ name, imageUrl, onSelect }: Props) {
++  return (
++    <div className="card" onClick={onSelect}>
++      <img src={imageUrl} />
++      <div style={{ color: "#bbb", background: "#fff" }}>{name}</div>
++    </div>
++  );
++}

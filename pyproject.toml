@@ -1,0 +1,42 @@
+[project]
+name = "review-personas"
+version = "0.1.0"
+description = "Persona-based AI review of GitHub pull requests (AWS Bedrock in CI, Claude Code locally)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "boto3>=1.35",
+    "PyYAML>=6.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+review-personas = "review_personas.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+review_personas = ["personas/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Prompt text reads better unwrapped.
+"src/review_personas/prompt.py" = ["E501"]

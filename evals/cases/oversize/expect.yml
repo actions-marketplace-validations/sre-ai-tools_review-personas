@@ -1,0 +1,6 @@
+# Run with a small budget so the catalog file exceeds it (DAT-4).
+max_diff_chars: 4000
+not_reviewed: {"data/catalog.json": size limit}
+app-developer:
+  relevant: true
+  must_catch: Integer division (//) truncates cents, losing the fractional dollars.

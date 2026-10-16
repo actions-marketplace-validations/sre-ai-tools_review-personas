@@ -1,0 +1,25 @@
+diff --git a/lambdas/export_orders.py b/lambdas/export_orders.py
+new file mode 100644
+--- /dev/null
++++ b/lambdas/export_orders.py
+@@ -0,0 +1,12 @@
++import boto3
++
++table = boto3.resource("dynamodb").Table("orders")
++
++
++def handler(event, context):
++    # Export every order for the requested customer
++    items = table.scan()["Items"]
++    mine = [i for i in items if i["customer_id"] == event["customer_id"]]
++    s3 = boto3.client("s3")
++    s3.put_object(Bucket="acme-exports", Key=event["customer_id"], Body=str(mine), ACL="public-read")
++    return {"count": len(mine)}
+diff --git a/web/src/ExportButton.tsx b/web/src/ExportButton.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/src/ExportButton.tsx
+@@ -0,0 +1,6 @@
++export function ExportButton({ onExport }: { onExport: () => void }) {
++  return <span className="link" onClick={onExport}>Export</span>;
++}

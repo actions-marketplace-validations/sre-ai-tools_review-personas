@@ -41,7 +41,7 @@
 ```
 
 - **CI.** The workflow runs the package end to end: prepare, call Bedrock for each persona, finish, then post the comment.
-- **Local.** The `/review-personas` slash command runs `uvx review-personas prepare`, which needs no install step. Claude Code then runs one subagent per persona, each producing a JSON reply. Finally, `uvx review-personas finish` prints the combined review in the chat.
+- **Local.** The `/prpanel:review` slash command runs `uvx review-personas prepare`, which needs no install step. Claude Code then runs one subagent per persona, each producing a JSON reply. Finally, `uvx review-personas finish` prints the combined review in the chat.
 - **Requirement on developers:** `uv` must be installed. The slash command checks for it and explains how to install it if it's missing.
 
 **Why.** Code applies the deny list [DAT-1], the limits [REV-4] and scoring [SCO-1, SCO-2] identically in both places [LOC-3, MNT-1]. If the plugin were prompt-only, Claude would apply these rules itself, and they would only be best-effort locally.
@@ -188,6 +188,8 @@ paths: ["*.tsx", "*.css", "web/*"]   # optional
 - **Opt-out selection:** every built-in persona and every custom persona file runs unless it is marked `enabled: false` [PER-3]. Listing a persona in the config only changes its settings. Built-in personas added in later versions appear automatically.
 - **Built-in default model:** this repo sets a default Bedrock model, so a caller with no config still works [PER-4]. The default is **Claude Opus 5.5 on Bedrock**. Its exact Bedrock model ID (or inference profile ID) is checked against Bedrock during the build (D8).
 
+**Amendment (owner, 2026-10-15): the built-in default model is Qwen3 32B, `qwen.qwen3-32b-v1:0`**, replacing Claude Opus 5.5. The ID was checked with `aws bedrock list-foundation-models` (D8). It is on-demand only, with no inference profile, so callers must enable it in the region they run in. A test Converse call returned plain text with no reasoning blocks; the JSON was in a code fence, which `reply.parse_reply` already handles. The eval judge also uses the default model (D12), so the evals are now graded by Qwen too, and results aren't comparable with earlier runs. Callers who want Claude set `model:` in their config.
+
 ### Format
 
 `.github/review-personas.yml` in the caller repo. The file is optional, and so is every key in it.
@@ -198,7 +200,8 @@ max_diff_chars: 100000                 # D4
 exclude_sensitive: ["config/prod/*"]   # added to the built-in deny list; can't remove entries [DAT-3]
 exclude_generated: ["*.pb.go"]         # added to the generated list (D4)
 include_generated: ["*.lock"]          # removes entries from the generated list (D4)
-model_params: {}                       # passed to Bedrock as-is (D8)
+model_params:                          # per model ID; passed to Bedrock as-is (D8)
+  <bedrock-model-id>: {}
 prices:                                # optional; enables the cost estimate (D9)
   <bedrock-model-id>: {input_per_mtok: 4.00, output_per_mtok: 20.00}
 personas:
@@ -212,6 +215,8 @@ personas:
 ```
 
 Allowed per-persona keys: `enabled`, `model`, `model_params`, `extra_focus`, `paths`.
+
+**Amendment (owner, 2026-10-15): top-level `model_params` are keyed by model ID**, like `prices`. A persona gets the entry for the model it actually uses, after every override including the workflow's `model` input. Its own `personas.<id>.model_params` are merged on top. Before this change, top-level params went to every persona. Because they are model-specific, a setting meant for Claude could reach a persona on another model family, and Bedrock would reject that persona's call. Found by the persona review of this branch (App developer).
 
 ### Precedence (highest first)
 
@@ -288,6 +293,7 @@ Allowed per-persona keys: `enabled`, `model`, `model_params`, `extra_focus`, `pa
 - **Credentials:** the standard AWS chain, which in CI comes from `aws-actions/configure-aws-credentials` using OIDC [CI-2]. The region is a workflow input.
 - **Parallelism:** all personas run concurrently, one thread each. With about 5 personas, no concurrency limit is needed for the pilot.
 - **Timeouts and retries:** 120 seconds per call. Throttling, server errors and timeouts get adaptive retries, up to 3 attempts. This keeps the worst case within the 5-minute target [CI-4].
+  - **Correction (build, 2026-10-15):** the sentence above was wrong. One call can take 3 × (10 s connect + 120 s read) = 390 s, and twice that with the bad-reply retry. That's past the 5-minute target and past the job's 10-minute timeout, and if the job is killed, no comment is posted. So there is now an **overall review deadline of 240 s**: personas still running at that point are reported as ⚠️ "Timed out" and the comment is still posted [COM-4]. The per-call settings are unchanged. Found by the persona review of this branch (AWS architect).
 - **Request:** system prompt, messages, and `maxTokens` (default 4,000, which includes any model reasoning). **No `temperature` or `top_p`**, because newer Claude models reject sampling parameters. Model-specific options go through the optional `model_params`, sent as `additionalModelRequestFields`.
 - **Reply:** concatenate only the `text` content blocks, ignoring reasoning blocks. Take the stop reason and token usage from the response.
 - **Model IDs:** the default ID for Claude Opus 5.5 (D6) is checked with `aws bedrock list-foundation-models` and `list-inference-profiles` during the build. If the model needs one, the default becomes the cross-region inference profile ID. That's allowed, because there's no region restriction (intent: data handling).
@@ -332,10 +338,9 @@ action.yml                        composite action: installs the package, runs i
 src/review_personas/              Python package: the whole deterministic core (D1)
   personas/*.md                   built-in personas: the single copy [MNT-1]
 .claude-plugin/marketplace.json   makes this repo a Claude Code plugin marketplace [LOC-6]
-plugin/                           the Claude Code plugin
-  .claude-plugin/plugin.json
-  commands/review-personas.md     the /review-personas slash command
-  agents/persona-reviewer.md      one generic reviewer subagent, given a persona's prompt
+.claude-plugin/plugin.json        the repo root is the plugin (see amendment below)
+commands/review.md                the /prpanel:review slash command
+agents/persona-reviewer.md        one generic reviewer subagent, given a persona's prompt
 docs/specs/                       intent, requirements, design
 ```
 
@@ -355,9 +360,9 @@ docs/specs/                       intent, requirements, design
 
 ### Local path
 
-1. A developer installs the plugin by running `/plugin marketplace add sre-ai-tools/review-personas`, then `/plugin install review-personas`.
-2. `/review-personas [--base <branch>]` runs:
-   - `uvx --from "${CLAUDE_PLUGIN_ROOT}/.." review-personas prepare`. This uses the Python code from the plugin's own version, with no PyPI needed. It writes one prompt file per persona to a temporary directory outside the repo.
+1. A developer installs the plugin by running `/plugin marketplace add sre-ai-tools/review-personas`, then `/plugin install prpanel@review-personas`.
+2. `/prpanel:review [--base <branch>]` runs:
+   - `uvx --from "${CLAUDE_PLUGIN_ROOT}" review-personas prepare`. This uses the Python code from the plugin's own version, with no PyPI needed. It writes one prompt file per persona to a temporary directory outside the repo.
    - One `persona-reviewer` subagent per persona, in parallel. Each reads its prompt file and returns only the JSON reply.
    - `uvx … review-personas finish`, which validates the replies, applies the limits, scores them and prints the Markdown.
 3. The temporary directory is deleted afterwards. Nothing is written inside the repo [LOC-5].
@@ -373,6 +378,10 @@ A GitHub Actions release job, run manually with a version number:
 A breaking change to workflow inputs or the config format means `v2` [CI-6].
 
 **Rejected.** A moving major tag only: callers can't freeze a version or roll back.
+
+**Amendment (build, 2026-10-14).** The plugin is the **repo root**, not a `plugin/` subfolder. An installed plugin may contain only its own folder, and then `${CLAUDE_PLUGIN_ROOT}/..` wouldn't reach the Python package. With the root as the plugin, `uvx --from "${CLAUDE_PLUGIN_ROOT}"` always builds the matching code. Verified with `uvx --from <repo> review-personas --help`. The behaviour is unchanged.
+
+**Amendment (owner, 2026-10-15).** The plugin is named `prpanel` and its command `review`, so developers run `/prpanel:review`. Claude Code always shows plugin commands as `/<plugin>:<command>`, and the old names displayed as `/review-personas:review-personas`. The marketplace, repo, Python package, CLI, config file and workflows keep the name `review-personas`, so CI callers are unaffected. The install ID is `prpanel@review-personas`.
 
 ## D12. Testing and evals
 
@@ -426,6 +435,14 @@ evals/cases/<case>/
 Results go to the job summary.
 
 **Setup the owner must provide:** an AWS role for **this** repo's own workflows (OIDC), with Bedrock access to the default model.
+
+**Amendment (owner, 2026-10-15): evals are gated by an approval environment.** A PR that triggers evals runs code from that PR, including `evals/run.py`. Without a gate, any branch could use the eval role's AWS credentials. So:
+
+- The eval job runs in the GitHub Environment `evals`, which has the owner as a required reviewer. On a PR, the job **waits until the owner approves** after reading the change, and only then receives credentials. The same gate applies when releases call the evals.
+- The eval role's trust policy accepts only that environment (`sub`: `repo:sre-ai-tools/review-personas:environment:evals`), and its permissions allow only `bedrock:InvokeModel` on the eval models.
+- Fork PRs get no OIDC token, so they never run evals.
+
+Found by the persona review of this branch (AWS architect).
 
 _Pass bars are proposed; owner to confirm._
 

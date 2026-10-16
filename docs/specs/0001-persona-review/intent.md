@@ -54,10 +54,12 @@ Other GitHub repositories. They call this repo's reusable workflow from their ow
 | Providers | Bedrock only for now, behind one small provider interface so another provider can be added later without touching the review logic. |
 | Local: purpose | Self-review before opening a PR. |
 | Local: agent | Claude Code only, for now. |
-| Local: entry point | A `/review-personas` slash command, shipped as a Claude Code plugin from this repo. |
+| Local: entry point | A `/prpanel:review` slash command (plugin `prpanel`, command `review`), shipped as a Claude Code plugin from this repo. The product name stays `review-personas`. |
 | Local: scope | The branch compared with its base branch, including uncommitted changes: what the PR will contain. |
 | Local: consistency | The same persona definitions and the same repo config (`.github/review-personas.yml`: personas, extra focus, exclusions) as CI. Only the model differs, so results are close to CI's but not identical. |
 | Local: output | Shown in the Claude Code chat only. Nothing is posted to GitHub and no files are written. |
+
+_Amended 2026-10-15 by the owner: the command is `/prpanel:review` (plugin `prpanel`, command `review`). It was `/review-personas`, which Claude Code shows as `/review-personas:review-personas`._
 
 ## Out of scope (follows from the decisions)
 
