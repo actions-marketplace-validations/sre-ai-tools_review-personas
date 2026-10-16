@@ -12,4 +12,5 @@ Code is written only after `design.md` is approved. A later change, such as a me
 |---|---|---|
 | [0001](0001-persona-review/) | Persona PR review pipeline and local Claude Code runs | Built on `feat/0001-persona-review`; awaiting Bedrock and end-to-end verification |
 | [0002](0002-test-applications/) | Test applications for end-to-end verification of 0001 | Testbed live at [sre-ai-tools/review-personas-testbed](https://github.com/sre-ai-tools/review-personas-testbed) with its IAM role; awaiting the first verification run |
-| [0003](0003-personas-array-input/) | `personas` workflow input accepts a JSON array | Design approved; built on `feat/0001-persona-review`, not yet released |
+| [0003](0003-personas-array-input/) | `personas` workflow input accepts a JSON array | Merged to `main`; testbed pinned to `4331a71`; not yet released |
+| [0004](0004-security-persona/) | Security persona backed by Semgrep, Trivy, Gitleaks and Checkov | Requirements approved; design drafted, awaiting approval (S5 open) |
