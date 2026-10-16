@@ -57,6 +57,7 @@
 - **RUN-2 Must.** Re-running a scenario starts from the same state every time, with no hand-editing of the app or the PR. `[I: Req 5]`
 - **RUN-3 Must.** Reviews run only when the owner starts them. Nothing runs on a schedule, and nothing in this repo triggers the testbed. `[I: When scenarios run]`
 - **RUN-4 Must.** Every scenario except S10, S12 and S13 can also be run locally: the owner checks out the scenario branch and runs `/prpanel:review`, with the plugin installed from the version under test. `[I: Req 4]` `[0001: LOC-1, LOC-2, LOC-6]`
+  _Amendment (owner, 2026-10-15): the script can also run the local path unattended, with `/prpanel:review` in Claude Code's headless mode, so it uses the owner's Claude login and makes no Bedrock call. The owner still checks the results (CHK-1). See design T7._
 - **RUN-5 Must.** On the local path, the expected outcome's relevance, not-reviewed files and seeded-issue checks hold just as they do in CI. Nothing is posted to GitHub, and no files are written in the testbed. `[I: Req 4]` `[0001: LOC-3, LOC-4, LOC-5]`
 
 ## Checking and recording results

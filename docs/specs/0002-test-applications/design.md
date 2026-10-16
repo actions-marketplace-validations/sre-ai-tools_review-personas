@@ -210,6 +210,46 @@ scenarios/s02-aws-open-ssh/
 
 S10, S12 and S13 are CI-only, as RUN-4 says.
 
+### Amendment: headless local runs (owner, 2026-10-15)
+
+**Why.** The CI path must use Bedrock, because it runs on GitHub (CAL-3). The local path doesn't need to, but today the owner runs it by hand, one scenario at a time. Running it unattended lets the 10 local scenarios be checked often with the owner's Claude login, at no Bedrock cost.
+
+**Change.** A new command, `scenario.py local-run <id>… | all [--model M]`. For each scenario that isn't CI-only, it:
+
+1. **Loads the version under test.** It creates a temporary git worktree of the review-personas clone at the pinned commit, read from the `# pinned:` comment, and passes it to Claude Code with `--plugin-dir`. This replaces step 1 above for scripted runs, with no marketplace changes. A marketplace-installed `prpanel` is overridden for that session only; this is checked at build.
+2. **Creates the branch.** It creates `scenario/<id>` locally from `main` with the patch applied, as `local` does today. The branch is never pushed.
+3. **Runs the review headless.** From the testbed root, it runs:
+
+   ```
+   claude -p "/prpanel:review --base main" --plugin-dir <worktree> \
+     --allowedTools "Bash(command -v uvx)" "Bash(uvx --from:*)" Agent "Write(<tmp>/**)"
+   ```
+
+   - It adds `--model M` when one is given. Otherwise the review uses the owner's default Claude Code model. As in 0001 D6, local runs ignore the config's `model`.
+   - Write access is scoped to the system temp directory, where `prepare` puts the prompt and reply files. The exact path-rule syntax is confirmed at build.
+   - Each scenario has a 10-minute timeout.
+   - The run never uses `--bare`, because it would skip the OAuth login.
+4. **Checks that nothing was written.** It runs `git status --porcelain`. Any change other than the scenario commit marks that scenario as **failed: wrote files** [RUN-5, LOC-5].
+5. **Saves the output.** It returns to `main` and saves the printed Markdown to `results/<date>-<version>-local/<id>.md`, with the exit code and duration in a header.
+
+When it finishes, it prints a summary table (scenario, exit code, duration, output file).
+
+**What doesn't change:**
+- The owner still reads each output against `expect.md` and fills in the Local column of the results record [CHK-1]. Automated checking stays out of scope (intent).
+- `local <id>` for a manual run stays.
+- The CI path stays as it is.
+- It makes no Bedrock calls and uses no AWS credentials [LOC-4].
+
+**Build notes (2026-10-15):**
+- **Path rules:** `Read(//<tmp>/**)` and `Write(//<tmp>/**)` work, with `TMPDIR` set to a per-run directory.
+- **Plugin precedence:** `--plugin-dir` alone wasn't enough, because the owner also has `prpanel@review-personas` installed from the marketplace. Each session therefore also passes `--settings '{"enabledPlugins":{"prpanel@review-personas":false}}'`. A logged session confirmed that `prepare` and `finish` ran `uvx --from <pinned worktree>`.
+- **Blocked command:** in one run, the session tried `… ; echo "EXIT=$?"`. The permission rules blocked it, and the session carried on.
+- **Results:** S2 and S6 matched their local expectations, in about 45 seconds each.
+
+**Rejected.**
+- **A Claude API provider in review-personas, so CI could use Claude without Bedrock:** that's a change to 0001's "Bedrock only" decision, which would need its own intent.
+- **`--dangerously-skip-permissions`:** S8 puts a prompt injection into the reviewed content, so the session gets only the tools `/prpanel:review` needs.
+
 ## T8. Results record
 
 **Proposed** [CHK-1, CHK-2, CHK-3].
