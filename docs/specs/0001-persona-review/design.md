@@ -188,6 +188,8 @@ paths: ["*.tsx", "*.css", "web/*"]   # optional
 - **Opt-out selection:** every built-in persona and every custom persona file runs unless it is marked `enabled: false` [PER-3]. Listing a persona in the config only changes its settings. Built-in personas added in later versions appear automatically.
 - **Built-in default model:** this repo sets a default Bedrock model, so a caller with no config still works [PER-4]. The default is **Claude Opus 5.5 on Bedrock**. Its exact Bedrock model ID (or inference profile ID) is checked against Bedrock during the build (D8).
 
+**Amendment (owner, 2026-10-15): the built-in default model is Qwen3 32B, `qwen.qwen3-32b-v1:0`**, replacing Claude Opus 5.5. The ID was checked with `aws bedrock list-foundation-models` (D8). It is on-demand only, with no inference profile, so callers must enable it in the region they run in. A test Converse call returned plain text with no reasoning blocks; the JSON was in a code fence, which `reply.parse_reply` already handles. The eval judge also uses the default model (D12), so the evals are now graded by Qwen too, and results aren't comparable with earlier runs. Callers who want Claude set `model:` in their config.
+
 ### Format
 
 `.github/review-personas.yml` in the caller repo. The file is optional, and so is every key in it.

@@ -42,20 +42,19 @@ Create an IAM role with a trust policy for GitHub's OIDC provider (`token.action
 
 Use a **dedicated role** for this workflow, with no permissions beyond the one below. Consider a CloudWatch alarm on Bedrock invocations or spend.
 
-Give it permission to call the model. The default is the `global.anthropic.claude-opus-5-5` inference profile, which needs both the profile and the underlying model:
+Give it permission to call the model. The default is `qwen.qwen3-32b-v1:0` (Qwen3 32B), called on demand in the workflow's region:
 
 ```json
 {
   "Effect": "Allow",
   "Action": "bedrock:InvokeModel",
   "Resource": [
-    "arn:aws:bedrock:*:<ACCOUNT>:inference-profile/global.anthropic.claude-opus-5-5",
-    "arn:aws:bedrock:*::foundation-model/anthropic.claude-opus-5-5"
+    "arn:aws:bedrock:*::foundation-model/qwen.qwen3-32b-v1:0"
   ]
 }
 ```
 
-Enable the model in the Bedrock console for your account. To find other model IDs, run `aws bedrock list-inference-profiles`.
+Enable the model in the Bedrock console for your account, in the region you pass as `aws-region`. To use a model that runs through an inference profile instead (for example `global.anthropic.claude-opus-5-5`), allow both the profile (`arn:aws:bedrock:*:<ACCOUNT>:inference-profile/<id>`) and its underlying foundation model. To find model IDs, run `aws bedrock list-foundation-models` and `aws bedrock list-inference-profiles`.
 
 ### 2. Add the workflow
 

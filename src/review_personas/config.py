@@ -11,7 +11,7 @@ import yaml
 from .personas import PersonaDef, PersonaError, builtin_personas, custom_personas, string_list
 
 CONFIG_PATH = ".github/review-personas.yml"
-DEFAULT_MODEL = "global.anthropic.claude-opus-5-5"
+DEFAULT_MODEL = "qwen.qwen3-32b-v1:0"
 DEFAULT_MAX_DIFF_CHARS = 100_000
 
 # Never sent to a model; callers can add patterns but not remove these (DAT-2, DAT-3).

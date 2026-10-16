@@ -1,7 +1,7 @@
 # Copy to .github/review-personas.yml in your repo. The file and every key are optional.
 
 # Default Bedrock model ID (or inference profile ID) for every persona.
-# Built-in default: global.anthropic.claude-opus-5-5
+# Built-in default: qwen.qwen3-32b-v1:0
 # model: global.anthropic.claude-opus-5-5
 
 # Diff characters each persona sees. Whole files past the limit are listed as not reviewed.
@@ -23,7 +23,7 @@ exclude_generated:
 
 # Optional, enables the cost estimate. USD per million tokens, per model ID.
 # prices:
-#   global.anthropic.claude-opus-5-5: {input_per_mtok: 0.00, output_per_mtok: 0.00}
+#   qwen.qwen3-32b-v1:0: {input_per_mtok: 0.00, output_per_mtok: 0.00}
 
 # Every built-in persona, and every file in .github/review-personas/personas/, runs unless disabled.
 personas:
