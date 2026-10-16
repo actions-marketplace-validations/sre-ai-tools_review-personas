@@ -77,6 +77,13 @@ def test_cli_prepare_and_finish(repo, capsys):
     assert MARKER in capsys.readouterr().out
 
 
+# INP-11: `prepare` accepts the array form too
+def test_cli_prepare_personas_array(repo, capsys):
+    args = ["prepare", "--repo-root", str(repo), "--base", "main", "--personas", '["dba"]']
+    assert main(args) == EXIT_OK
+    assert [r["id"] for r in json.loads(capsys.readouterr().out)["reviews"]] == ["dba"]
+
+
 def test_cli_prepare_config_error(repo, capsys):
     (repo / ".github/review-personas.yml").write_text("bogus: 1\n")
     assert main(["prepare", "--repo-root", str(repo), "--base", "main"]) == 2

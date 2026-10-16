@@ -1,6 +1,12 @@
 import pytest
 
-from review_personas.config import DEFAULT_MODEL, SENSITIVE, ConfigError, load_settings
+from review_personas.config import (
+    DEFAULT_MODEL,
+    SENSITIVE,
+    ConfigError,
+    load_settings,
+    parse_persona_ids,
+)
 from review_personas.personas import PersonaError, builtin_personas, parse_persona
 
 BUILTINS = ["app-developer", "aws-architect", "dba", "ui-developer"]
@@ -146,3 +152,35 @@ def test_model_params_follow_workflow_model_override(tmp_path):
         model_override="m-cli",
     )
     assert {p.id: p.model_params for p in s.personas}["dba"] == {"x": 1}
+
+
+# INP-1 to INP-6: both forms, trimmed, in order; empty means all
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ('["aws-architect", "dba"]', ["aws-architect", "dba"]),
+        ('  [" dba ", "aws-architect"]', ["dba", "aws-architect"]),
+        ("aws-architect, dba", ["aws-architect", "dba"]),
+        ("dba,", ["dba"]),
+        ("", None),
+        ("   ", None),
+        ("[]", None),
+    ],
+)
+def test_parse_persona_ids(value, expected):
+    assert parse_persona_ids(value) == expected
+
+
+# INP-7, INP-8: malformed arrays name the value and both forms
+@pytest.mark.parametrize("value", ['["dba"', '["dba", 3]', '[""]', '[" "]', '[{"dba": 1}]'])
+def test_parse_persona_ids_rejects(value):
+    with pytest.raises(ConfigError) as e:
+        parse_persona_ids(value)
+    msg = str(e.value)
+    assert repr(value) in msg and "JSON array" in msg and "comma-separated" in msg
+
+
+# INP-3, INP-9: only a leading `[` means JSON; anything else is an id, checked as today
+def test_non_array_json_is_an_unknown_id(tmp_path):
+    with pytest.raises(ConfigError, match="Unknown or disabled"):
+        load_settings(repo(tmp_path), personas_override=parse_persona_ids('{"dba": 1}'))

@@ -23,3 +23,7 @@ jobs:
     with:
       aws-role-arn: arn:aws:iam::123456789012:role/github-review-personas
       aws-region: us-east-1
+      # Optional: run only these personas (comma-separated ids also work).
+      # personas: '["aws-architect", "dba"]'
+      # Optional: one Bedrock model ID for every persona.
+      # model: global.anthropic.claude-opus-5-5

@@ -9,14 +9,10 @@ import sys
 from pathlib import Path
 
 from .changes import GitError, ci_changes
-from .config import ConfigError, load_settings
+from .config import ConfigError, load_settings, parse_persona_ids
 from .render import comment, job_summary
 
 EXIT_OK, EXIT_BROKEN, EXIT_CONFIG = 0, 1, 2
-
-
-def _split(value: str) -> list[str] | None:
-    return [s.strip() for s in value.split(",") if s.strip()] or None
 
 
 def _event() -> dict:
@@ -37,7 +33,7 @@ def cmd_ci(args: argparse.Namespace, llm=None, github=None) -> int:
             root,
             args.config,
             model_override=args.model or None,
-            personas_override=_split(args.personas),
+            personas_override=parse_persona_ids(args.personas),
         )
     except ConfigError as e:
         print(f"::error::review-personas config error: {e}", file=sys.stderr)
@@ -98,7 +94,11 @@ def build_parser() -> argparse.ArgumentParser:
     ci = sub.add_parser("ci", help="Review a pull request with AWS Bedrock and post the comment")
     ci.add_argument("--repo-root", default=".", help="Checkout of the caller repo")
     ci.add_argument("--config", default=None, help="Config path relative to the repo root")
-    ci.add_argument("--personas", default="", help="Comma-separated ids to run (overrides config)")
+    ci.add_argument(
+        "--personas",
+        default="",
+        help="JSON array or comma-separated ids to run (overrides config)",
+    )
     ci.add_argument("--model", default="", help="Model ID for every persona (overrides config)")
     ci.add_argument("--region", default=None, help="AWS region (default: AWS_REGION)")
     ci.add_argument("--repo", default=None, help="owner/name (default: GITHUB_REPOSITORY)")
@@ -113,7 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
     prep.add_argument("--repo-root", default=".", help="The repository to review")
     prep.add_argument("--base", default=None, help="Base branch (default: the remote's default)")
     prep.add_argument("--config", default=None, help="Config path relative to the repo root")
-    prep.add_argument("--personas", default="", help="Comma-separated ids to run")
+    prep.add_argument("--personas", default="", help="JSON array or comma-separated ids to run")
     prep.set_defaults(func=cmd_prepare)
 
     fin = sub.add_parser("finish", help="Local: validate replies and print the review")
@@ -167,7 +167,7 @@ def cmd_prepare(args: argparse.Namespace) -> int:
             Path(args.repo_root),
             base=args.base,
             config=args.config,
-            personas=_split(args.personas),
+            personas=parse_persona_ids(args.personas),
         )
     except (ConfigError, GitError) as e:
         print(f"review-personas: {e}", file=sys.stderr)

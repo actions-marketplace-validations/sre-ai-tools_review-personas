@@ -176,6 +176,39 @@ def test_ci_exit_codes(monkeypatch, git_repo):
     assert ci(monkeypatch, git_repo, FakeLLM(ALL), FakeGitHub(), event=EVENT) == EXIT_CONFIG
 
 
+# INP-1, INP-7, INP-9: the array form through `ci`
+def test_ci_personas_array(monkeypatch, git_repo, capsys):
+    gh = FakeGitHub()
+    code = ci(
+        monkeypatch,
+        git_repo,
+        FakeLLM(ALL),
+        gh,
+        "--base-ref",
+        "main",
+        "--personas",
+        '["dba"]',
+        event=EVENT,
+    )
+    assert code == EXIT_OK
+    body = gh.posted[0][1]
+    assert "DBA" in body and "App developer" not in body
+    for bad in ('["dba"', '["nope"]'):
+        code = ci(
+            monkeypatch,
+            git_repo,
+            FakeLLM(ALL),
+            FakeGitHub(),
+            "--base-ref",
+            "main",
+            "--personas",
+            bad,
+            event=EVENT,
+        )
+        assert code == EXIT_CONFIG
+    assert "nope" in capsys.readouterr().err
+
+
 def test_ci_dry_run_prints(monkeypatch, git_repo, capsys):
     code = ci(monkeypatch, git_repo, FakeLLM(ALL), None, "--base-ref", "main", "--dry-run")
     assert code == EXIT_OK and MARKER in capsys.readouterr().out

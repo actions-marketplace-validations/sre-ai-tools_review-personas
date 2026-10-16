@@ -8,7 +8,7 @@ inputs:
     description: Config file path in the caller repo (optional; defaults apply when missing)
     default: .github/review-personas.yml
   personas:
-    description: Comma-separated persona ids to run, overriding the config
+    description: 'Persona ids to run, overriding the config: a JSON array like ["aws-architect", "dba"], or comma-separated'
     default: ""
   model:
     description: Bedrock model ID for every persona, overriding the config

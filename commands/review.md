@@ -1,6 +1,6 @@
 ---
 description: Review your branch with the review-personas panel (AWS architect, App developer, UI developer, DBA) before opening a PR
-argument-hint: "[--base <branch>] [--personas id,id]"
+argument-hint: "[--base <branch>] [--personas id,id | '[\"id\",\"id\"]']"
 allowed-tools: Bash(command -v uvx), Bash(uvx --from:*), Write, Agent
 ---
 

@@ -65,7 +65,7 @@ Copy [examples/caller-workflow.yml](examples/caller-workflow.yml) to `.github/wo
 | `aws-role-arn` | required | Role from step 1 |
 | `aws-region` | `us-east-1` | Region for Bedrock calls |
 | `config-path` | `.github/review-personas.yml` | Optional config file |
-| `personas` | all enabled | Comma-separated ids, for this run only |
+| `personas` | all enabled | JSON array like `'["aws-architect", "dba"]'`, or comma-separated ids; for this run only |
 | `model` | from config | Model ID for every persona |
 
 Pin `@v1` to get compatible updates automatically, or `@v1.2.3` to freeze a version.
@@ -97,6 +97,7 @@ Then, on your feature branch:
 /prpanel:review                       # branch vs the remote's default branch, incl. uncommitted work
 /prpanel:review --base develop
 /prpanel:review --personas dba,app-developer
+/prpanel:review --personas '["dba", "app-developer"]'   # keep the single quotes
 ```
 
 - **Model and config:** it uses your Claude Code model and the repo's `.github/review-personas.yml`. Model settings in the config are ignored locally.

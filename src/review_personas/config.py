@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -111,6 +112,24 @@ def _str_list(value: object, where: str) -> tuple[str, ...]:
         return string_list(value, where)
     except PersonaError as e:
         raise ConfigError(str(e)) from e
+
+
+def parse_persona_ids(value: str) -> list[str] | None:
+    """The `personas` input: a JSON array or comma-separated ids; None means all (0003 P2)."""
+    if not value.strip():
+        return None  # INP-6
+    if value.lstrip().startswith("["):  # INP-3
+        try:
+            items = json.loads(value)
+        except ValueError:
+            items = None
+        if not isinstance(items, list) or not all(isinstance(i, str) and i.strip() for i in items):
+            raise ConfigError(  # INP-7, INP-8
+                '`personas` must be a JSON array of persona ids like ["aws-architect", "dba"], '
+                f"or comma-separated ids like aws-architect,dba; got {value[:200]!r}"
+            )
+        return [i.strip() for i in items] or None  # INP-4, INP-5
+    return [s.strip() for s in value.split(",") if s.strip()] or None  # INP-2
 
 
 def _prices(raw: object) -> dict[str, Price]:

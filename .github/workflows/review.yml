@@ -17,7 +17,7 @@ on:
         type: string
         default: .github/review-personas.yml
       personas:
-        description: Comma-separated persona ids, overriding the config
+        description: 'Persona ids to run, overriding the config: a JSON array like ["aws-architect", "dba"], or comma-separated'
         type: string
         default: ""
       model:
