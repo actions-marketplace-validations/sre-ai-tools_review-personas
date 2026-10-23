@@ -1,6 +1,6 @@
 [project]
 name = "review-personas"
-version = "0.1.0"
+version = "1.0.0"
 description = "Persona-based AI review of GitHub pull requests (AWS Bedrock in CI, Claude Code locally)"
 readme = "README.md"
 requires-python = ">=3.10"
