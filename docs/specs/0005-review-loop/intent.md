@@ -1,6 +1,6 @@
 # Intent: review loop
 
-> Status: **Draft**, 2026-10-24. Awaiting owner approval.
+> Status: **Approved** by the owner, 2026-10-24.
 
 ## What
 
@@ -50,7 +50,7 @@ Developers using the `prpanel` plugin in Claude Code, before opening a PR. CI is
 
 ## Decisions
 
-_Proposed; to be confirmed by the owner._
+_Confirmed by the owner, 2026-10-24._
 
 | Decision | Proposal |
 |---|---|
