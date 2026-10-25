@@ -1,6 +1,6 @@
 # Requirements: review loop
 
-> Status: **Draft**, 2026-10-24. Derived from [intent.md](intent.md) (approved 2026-10-24). These describe *what* the command must do; *how* belongs in design.md.
+> Status: **Approved** by the owner, 2026-10-24. Derived from [intent.md](intent.md) (approved 2026-10-24). These describe *what* the command must do; *how* belongs in design.md.
 >
 > Each requirement has an ID for traceability (`[I: …]` points to the part of intent.md it comes from). **Must** means required for the first release; **Should** means wanted, but it can ship without it.
 
