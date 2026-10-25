@@ -22,6 +22,32 @@ A panel of AI reviewers for GitHub pull requests: **AWS architect**, **App devel
 
 How this was specified and why: [docs/specs/0001-persona-review](docs/specs/0001-persona-review/).
 
+## Quick start
+
+**On your machine, before opening a PR** (needs [Claude Code](https://claude.com/claude-code) and [uv](https://docs.astral.sh/uv/)):
+
+- Install once, in Claude Code:
+  - `/plugin marketplace add sre-ai-tools/review-personas`
+  - `/plugin install prpanel@review-personas`
+- On your branch, run one of:
+  - `/prpanel:review`: shows the panel's review. Changes nothing.
+  - `/prpanel:review-loop`: reviews, checks each finding, asks which to fix, fixes them with a test each, and reviews again. Never commits.
+- No AWS account needed: it uses your Claude Code login.
+
+**On every PR, in GitHub Actions** (needs an AWS account with Bedrock):
+
+- Create an IAM role GitHub can assume for your repo's PRs, allowed only to call one Bedrock model ([details](#1-aws-an-iam-role-github-can-assume)).
+- Enable that model in the Bedrock console.
+- Copy [examples/caller-workflow.yml](examples/caller-workflow.yml) to `.github/workflows/review-personas.yml` and set the role ARN.
+- Open a PR: one comment appears with a score out of 10. Higher is better; it never blocks a merge.
+
+**Optional:**
+
+- Tune personas in `.github/review-personas.yml` ([example](examples/review-personas.yml)).
+- Add your own reviewer: one Markdown file in `.github/review-personas/personas/` ([example](examples/security.md)).
+
+The rest of this README is the full reference.
+
 ## Use it in CI
 
 ### 1. AWS: an IAM role GitHub can assume
@@ -102,6 +128,20 @@ Then, on your feature branch:
 
 - **Model and config:** it uses your Claude Code model and the repo's `.github/review-personas.yml`. Model settings in the config are ignored locally.
 - **Output:** the result is shown in the chat only. Nothing is posted to GitHub, and nothing is written inside the repo.
+
+### Review, fix and review again
+
+```
+/prpanel:review-loop                  # up to 2 rounds
+/prpanel:review-loop 3 --personas dba,app-developer
+```
+
+Each round reviews the branch as `/prpanel:review` does, checks every finding against the code, and asks you which to fix. Each fix comes with a test that is shown to fail without it. The loop stops when a round finds nothing new at high or medium severity, at the round limit, or when you stop it. It ends with the last review and a **Known follow-ups** list to paste into the PR description.
+
+- **It edits code and tests in the repo,** unlike `/prpanel:review`. It never commits, pushes or switches branches.
+- **You choose every fix.** Findings it judges false are listed with a reason, not fixed. The score is shown but never decides anything.
+
+How it was specified: [docs/specs/0005-review-loop](docs/specs/0005-review-loop/).
 
 ## Measure the pilot
 
