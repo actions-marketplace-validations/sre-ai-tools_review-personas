@@ -103,6 +103,20 @@ Then, on your feature branch:
 - **Model and config:** it uses your Claude Code model and the repo's `.github/review-personas.yml`. Model settings in the config are ignored locally.
 - **Output:** the result is shown in the chat only. Nothing is posted to GitHub, and nothing is written inside the repo.
 
+### Review, fix and review again
+
+```
+/prpanel:review-loop                  # up to 2 rounds
+/prpanel:review-loop 3 --personas dba,app-developer
+```
+
+Each round reviews the branch as `/prpanel:review` does, checks every finding against the code, and asks you which to fix. Each fix comes with a test that is shown to fail without it. The loop stops when a round finds nothing new at high or medium severity, at the round limit, or when you stop it. It ends with the last review and a **Known follow-ups** list to paste into the PR description.
+
+- **It edits code and tests in the repo,** unlike `/prpanel:review`. It never commits, pushes or switches branches.
+- **You choose every fix.** Findings it judges false are listed with a reason, not fixed. The score is shown but never decides anything.
+
+How it was specified: [docs/specs/0005-review-loop](docs/specs/0005-review-loop/).
+
 ## Measure the pilot
 
 ```sh

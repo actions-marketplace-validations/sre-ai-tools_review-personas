@@ -1,19 +1,19 @@
 # Design: review loop
 
-> Status: **Draft**, 2026-10-24. Implements [requirements.md](requirements.md) (approved 2026-10-24). Requirement IDs appear in brackets, e.g. [FIX-3].
+> Status: **Approved** by the owner, 2026-10-24, including the proposed details at the end. Implements [requirements.md](requirements.md) (approved 2026-10-24). Requirement IDs appear in brackets, e.g. [FIX-3].
 
 ## Decisions
 
 | # | Topic | Status |
 |---|---|---|
-| D1 | Files and shape of the command | Proposed |
-| D2 | Findings as data: `finish --json` | Proposed |
-| D3 | Verification: a read-only verifier subagent | Proposed |
-| D4 | The developer's choice | Proposed |
-| D5 | Proof that a test fails without its fix: `review-personas loop` | Proposed |
-| D6 | Tests, memory and stopping | Proposed |
-| D7 | The final report | Proposed |
-| D8 | Testing and release | Proposed |
+| D1 | Files and shape of the command | ✅ Decided |
+| D2 | Findings as data: `finish --json` | ✅ Decided |
+| D3 | Verification: a read-only verifier subagent | ✅ Decided |
+| D4 | The developer's choice | ✅ Decided |
+| D5 | Proof that a test fails without its fix: `review-personas loop` | ✅ Decided |
+| D6 | Tests, memory and stopping | ✅ Decided |
+| D7 | The final report | ✅ Decided |
+| D8 | Testing and release | ✅ Decided |
 
 ---
 

@@ -19,6 +19,7 @@ from .render import comment
 from .reply import InvalidReply, parse_reply, retry_message
 from .result import PersonaResult
 from .runner import PersonaPlan, plan_reviews
+from .scoring import cumulative_score
 
 MANIFEST = "manifest.json"
 PROMPT_FILE = "prompts/{id}.md"
@@ -98,8 +99,23 @@ def _plan(entry: dict) -> PersonaPlan:
     )
 
 
+def _persona_data(result: PersonaResult) -> dict:
+    """One persona's validated verdict as data, for `finish --json` (0005 D2)."""
+    verdict = result.verdict
+    relevant = bool(verdict and verdict.relevant)
+    return {
+        "id": result.persona.id,
+        "relevant": relevant,
+        "score": verdict.score if result.scored else None,
+        "summary": verdict.summary if verdict else "",
+        "error": result.error,
+        "findings": [asdict(f) for f in verdict.findings] if relevant else [],
+    }
+
+
 def finish(work: Path) -> dict:
-    """Returns {"retry": [...]} once if any reply is unusable, else {"review": markdown}.
+    """Returns {"retry": [...]} once if any reply is unusable, else the review: its Markdown
+    (`review`), the cumulative `score`, and each persona's validated findings (`personas`).
 
     The final call deletes the working directory (LOC-5: nothing left behind).
     """
@@ -141,4 +157,8 @@ def finish(work: Path) -> dict:
         reviewed=manifest["reviewed"],
     )
     shutil.rmtree(work, ignore_errors=True)
-    return {"review": review}
+    return {
+        "review": review,
+        "score": cumulative_score(results),
+        "personas": [_persona_data(r) for r in results],
+    }

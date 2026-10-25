@@ -1,4 +1,5 @@
-"""Command line: `review-personas ci | prepare | finish | metrics`. Exit codes follow design D10."""
+"""Command line: `review-personas ci | prepare | finish | loop | metrics`. Exit codes follow
+design D10; `loop check` adds 4 and 5 (0005 D5)."""
 
 from __future__ import annotations
 
@@ -118,7 +119,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     fin = sub.add_parser("finish", help="Local: validate replies and print the review")
     fin.add_argument("dir", help="The directory printed by `prepare`")
+    fin.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the review, score and validated findings as JSON (for /prpanel:review-loop)",
+    )
     fin.set_defaults(func=cmd_finish)
+
+    loop = sub.add_parser("loop", help="Local: prove a test fails without its fix (review-loop)")
+    loop_sub = loop.add_subparsers(dest="loop_command", required=True)
+    save = loop_sub.add_parser("save", help="Keep the pre-fix content of code files before a fix")
+    save.add_argument("state", help="The loop's state directory, outside the repository")
+    save.add_argument("files", nargs="+", help="Code files the fix will change (not test files)")
+    save.add_argument("--repo-root", default=".", help="The repository")
+    save.set_defaults(func=cmd_loop_save)
+    chk = loop_sub.add_parser("check", help="Run the test without the fix, then restore the fix")
+    chk.add_argument("state", help="The loop's state directory")
+    chk.add_argument("--test", required=True, help="Command that runs the new test")
+    chk.add_argument("--repo-root", default=".", help="The repository")
+    chk.add_argument(
+        "--timeout", type=float, default=600, help="Seconds before the test is stopped"
+    )
+    chk.set_defaults(func=cmd_loop_check)
 
     met = sub.add_parser("metrics", help="Pilot: median review speed before vs after adoption")
     met.add_argument("--repo", required=True, help="owner/name")
@@ -195,8 +217,42 @@ def cmd_finish(args: argparse.Namespace) -> int:
     if "retry" in out:
         print(json.dumps(out, indent=2))
         return EXIT_RETRY
-    print(out["review"])
+    print(json.dumps(out, indent=2) if args.json else out["review"])
     return EXIT_OK
+
+
+def cmd_loop_save(args: argparse.Namespace) -> int:
+    from .loop import LoopError, save
+
+    try:
+        saved = save(Path(args.state), Path(args.repo_root), args.files)
+    except (LoopError, OSError) as e:
+        print(f"review-personas: {e}", file=sys.stderr)
+        return EXIT_CONFIG
+    print(json.dumps({"saved": saved}, indent=2))
+    return EXIT_OK
+
+
+def cmd_loop_check(args: argparse.Namespace) -> int:
+    from .loop import LoopError, check
+
+    try:
+        result = check(Path(args.state), Path(args.repo_root), args.test, args.timeout)
+    except (LoopError, OSError, ValueError) as e:
+        print(f"review-personas: {e}", file=sys.stderr)
+        return EXIT_CONFIG
+    print(
+        json.dumps(
+            {
+                "test_failed_without_fix": result.test_failed_without_fix,
+                "unrestored": result.unrestored,
+                "copies": str(Path(args.state) / "fixed") if result.unrestored else None,
+                "output": result.output,
+            },
+            indent=2,
+        )
+    )
+    return result.code
 
 
 def main(argv: list[str] | None = None) -> int:

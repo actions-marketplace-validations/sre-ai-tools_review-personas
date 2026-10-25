@@ -108,3 +108,47 @@ def test_finish_missing_or_damaged_dir(tmp_path, capsys):
     (tmp_path / "manifest.json").write_text("{not json")
     assert main(["finish", str(tmp_path)]) == 2
     assert "JSONDecodeError" in capsys.readouterr().err
+
+
+# 0005 D2: `finish --json` gives the validated findings as data; the Markdown is unchanged.
+FINDING = (
+    '{"relevant": true, "score": 6, "summary": "Locks the table.", "findings": '
+    '[{"severity": "high", "file": "a.py", "line": 1, "comment": "Use a lock timeout."}]}'
+)
+
+
+def test_cli_finish_json(repo, capsys):
+    assert main(["prepare", "--repo-root", str(repo), "--base", "main"]) == EXIT_OK
+    out = json.loads(capsys.readouterr().out)
+    replies = {r["id"]: NOT_RELEVANT for r in out["reviews"]} | {"dba": FINDING}
+    write_replies(out, replies)
+    assert main(["finish", out["dir"], "--json"]) == EXIT_OK
+    data = json.loads(capsys.readouterr().out)
+
+    assert data["score"] == 6.0
+    assert MARKER in data["review"]
+    dba = next(p for p in data["personas"] if p["id"] == "dba")
+    assert dba["findings"] == [
+        {"severity": "high", "comment": "Use a lock timeout.", "file": "a.py", "line": 1}
+    ]
+    others = [p for p in data["personas"] if p["id"] != "dba"]
+    assert all(not p["relevant"] and p["findings"] == [] and p["score"] is None for p in others)
+
+
+# 0005 D1, D3: the loop command uses the same review steps, and the verifier can only read.
+def test_review_loop_plugin_files():
+    command = (ROOT / "commands/review-loop.md").read_text()
+    for step in (
+        "review-personas prepare",
+        "review-personas finish",
+        "--json",
+        "loop save",
+        "loop check",
+    ):
+        assert step in command
+    assert "persona-reviewer" in command and "finding-verifier" in command
+    for forbidden in ("git commit", "git push", "git checkout", "git stash"):
+        assert f"Bash({forbidden}" not in command  # FIX-5: never pre-allowed
+    agent = (ROOT / "agents/finding-verifier.md").read_text()
+    assert "name: finding-verifier" in agent
+    assert "tools: Read, Grep, Glob\n" in agent  # VER-3: no write, run or network tools
