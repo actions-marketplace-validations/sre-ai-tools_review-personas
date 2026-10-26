@@ -146,6 +146,26 @@ Each round reviews the branch as `/prpanel:review` does, checks every finding ag
 
 How it was specified: [docs/specs/0005-review-loop](docs/specs/0005-review-loop/).
 
+## How it works
+
+One Python package does the setup and the scoring, both locally and in CI. Only the step that calls the model differs.
+
+- **Personas are Markdown files.** The built-in four are in [src/review_personas/personas/](src/review_personas/personas/). Custom ones go in your repo's `.github/review-personas/personas/`. The YAML config only turns them on or off and tunes them.
+- **The commands are Markdown too.** [commands/review.md](commands/review.md) and [commands/review-loop.md](commands/review-loop.md) are step-by-step instructions that Claude Code follows.
+
+`/prpanel:review` runs in three steps:
+
+1. **Prepare (Python).** `review-personas prepare` finds the changes (the diff against the merge-base with the base branch, plus uncommitted and untracked files), reads the config, drops sensitive files, and writes one prompt per persona to a temp folder outside the repo.
+2. **Review (Claude Code).** One [persona-reviewer](agents/persona-reviewer.md) subagent per persona, all in parallel. Each can only read its prompt file. These are the only model calls.
+3. **Finish (Python).** `review-personas finish` checks each reply's format, retries unusable ones once, works out the scores and renders the comment.
+
+`/prpanel:review-loop` adds two things:
+
+- **[finding-verifier](agents/finding-verifier.md) subagents** check each finding against the code. They can read and search, not edit.
+- **`review-personas loop save` and `loop check`** copy files before a fix, then swap the copies back in to prove the new test fails without the fix, and restore the fix. They never use git.
+
+**In CI,** the same package runs in GitHub Actions and calls Bedrock directly, since there are no subagents. Both paths build prompts, validate replies and score the same way.
+
 ## Measure the pilot
 
 ```sh
