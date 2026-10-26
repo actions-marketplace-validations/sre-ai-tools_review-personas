@@ -27,9 +27,9 @@ How this was specified and why: [docs/specs/0001-persona-review](docs/specs/0001
 **On your machine, before opening a PR** (needs [Claude Code](https://claude.com/claude-code) and [uv](https://docs.astral.sh/uv/)):
 
 - Install once, in Claude Code:
-  - `/plugin marketplace add sre-ai-tools/review-personas#v1.1.0`
+  - `/plugin marketplace add sre-ai-tools/review-personas#v1.1.1`
   - `/plugin install prpanel@review-personas`
-  - `#v1.1.0` pins the release. Without it you get whatever is on `main`. Newer releases are on the [releases page](https://github.com/sre-ai-tools/review-personas/releases).
+  - `#v1.1.1` pins the release. Without it you get whatever is on `main`. Newer releases are on the [releases page](https://github.com/sre-ai-tools/review-personas/releases).
 - On your branch, run one of:
   - `/prpanel:review`: shows the panel's review. Changes nothing.
   - `/prpanel:review-loop`: reviews, checks each finding, asks which to fix, fixes them with a test each, and reviews again. Never commits.
@@ -114,11 +114,11 @@ The job summary shows tokens per persona. With `prices` set, it also shows estim
 You need [uv](https://docs.astral.sh/uv/) installed (`brew install uv`). Then, in Claude Code:
 
 ```
-/plugin marketplace add sre-ai-tools/review-personas#v1.1.0
+/plugin marketplace add sre-ai-tools/review-personas#v1.1.1
 /plugin install prpanel@review-personas
 ```
 
-`#v1.1.0` pins a release tag, so the plugin doesn't change under you when `main` moves. From your shell, `claude plugin marketplace add` takes the same form.
+`#v1.1.1` pins a release tag, so the plugin doesn't change under you when `main` moves. From your shell, `claude plugin marketplace add` takes the same form.
 
 Then, on your feature branch:
 
