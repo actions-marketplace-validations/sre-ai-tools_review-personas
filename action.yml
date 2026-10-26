@@ -1,5 +1,8 @@
 name: Review personas
-description: Persona-based AI review of a pull request with AWS Bedrock. Run via the reusable workflow, which checks out the PR and configures AWS credentials first.
+description: "AI review panel for pull requests: AWS, app, UI and DBA personas on AWS Bedrock. Use via the reusable workflow."
+branding:
+  icon: users
+  color: purple
 inputs:
   github-token:
     description: Token used to post the review comment
